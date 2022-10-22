@@ -1,44 +1,44 @@
 <RCC>
-    <qresource prefix="/img">
-        <file>splash.png</file>
-        <file>icon.png</file>
-        <file>logo.png</file>
-        <file>paypal-logo.png</file>
+    <qresource prefix="/">
+        <file>img/splash.png</file>
+        <file>img/icon.png</file>
+        <file>img/logo.png</file>
+        <file>img/paypal-logo.png</file>
     </qresource>
-    <qresource prefix="/lng">
-        <file>i18n/clipgrab_fr.qm</file>
-        <file>i18n/clipgrab_de.qm</file>
-        <file>i18n/clipgrab_fi.qm</file>
-        <file>i18n/clipgrab_pl.qm</file>
-        <file>i18n/clipgrab_ja.qm</file>
-        <file>i18n/clipgrab_ro.qm</file>
-        <file>i18n/clipgrab_el.qm</file>
-        <file>i18n/clipgrab_it.qm</file>
-        <file>i18n/clipgrab_es.qm</file>
-        <file>i18n/clipgrab_ru.qm</file>
-        <file>i18n/clipgrab_cs.qm</file>
-        <file>i18n/clipgrab_zh.qm</file>
-        <file>i18n/clipgrab_nl.qm</file>
-        <file>i18n/clipgrab_pt.qm</file>
-        <file>i18n/clipgrab_id.qm</file>
-        <file>i18n/clipgrab_tr.qm</file>
-        <file>i18n/clipgrab_hu.qm</file>
-        <file>i18n/clipgrab_pa.qm</file>
-        <file>i18n/clipgrab_sr.qm</file>
-        <file>i18n/clipgrab_no.qm</file>
-        <file>i18n/clipgrab_vi.qm</file>
-        <file>i18n/clipgrab_fa.qm</file>
-        <file>i18n/clipgrab_sw.qm</file>
-        <file>i18n/clipgrab_ca.qm</file>
-        <file>i18n/clipgrab_si.qm</file>
-        <file>i18n/clipgrab_sv.qm</file>
-        <file>i18n/clipgrab_ko.qm</file>
-        <file>i18n/clipgrab_lt.qm</file>
-        <file>i18n/clipgrab_hr.qm</file>
-        <file>i18n/clipgrab_mk.qm</file>
-        <file>i18n/clipgrab_bg.qm</file>
-        <file>i18n/clipgrab_eu.qm</file>
-        <file>i18n/clipgrab_bn.qm</file>
+    <qresource prefix="/">
+        <file>lng/clipgrab_fr.qm</file>
+        <file>lng/clipgrab_de.qm</file>
+        <file>lng/clipgrab_fi.qm</file>
+        <file>lng/clipgrab_pl.qm</file>
+        <file>lng/clipgrab_ja.qm</file>
+        <file>lng/clipgrab_ro.qm</file>
+        <file>lng/clipgrab_el.qm</file>
+        <file>lng/clipgrab_it.qm</file>
+        <file>lng/clipgrab_es.qm</file>
+        <file>lng/clipgrab_ru.qm</file>
+        <file>lng/clipgrab_cs.qm</file>
+        <file>lng/clipgrab_zh.qm</file>
+        <file>lng/clipgrab_nl.qm</file>
+        <file>lng/clipgrab_pt.qm</file>
+        <file>lng/clipgrab_id.qm</file>
+        <file>lng/clipgrab_tr.qm</file>
+        <file>lng/clipgrab_hu.qm</file>
+        <file>lng/clipgrab_pa.qm</file>
+        <file>lng/clipgrab_sr.qm</file>
+        <file>lng/clipgrab_no.qm</file>
+        <file>lng/clipgrab_vi.qm</file>
+        <file>lng/clipgrab_fa.qm</file>
+        <file>lng/clipgrab_sw.qm</file>
+        <file>lng/clipgrab_ca.qm</file>
+        <file>lng/clipgrab_si.qm</file>
+        <file>lng/clipgrab_sv.qm</file>
+        <file>lng/clipgrab_ko.qm</file>
+        <file>lng/clipgrab_lt.qm</file>
+        <file>lng/clipgrab_hr.qm</file>
+        <file>lng/clipgrab_mk.qm</file>
+        <file>lng/clipgrab_bg.qm</file>
+        <file>lng/clipgrab_eu.qm</file>
+        <file>lng/clipgrab_bn.qm</file>
     </qresource>
     <qresource prefix="/crt">
         <file>mozilla-root-cas.txt</file>
