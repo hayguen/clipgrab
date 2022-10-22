@@ -33,7 +33,6 @@ MainWindow::MainWindow(ClipGrab* cg, QWidget *parent, Qt::WindowFlags flags)
 
 MainWindow::~MainWindow()
 {
-    delete this->searchPage;
 }
 
 void MainWindow::init()
@@ -94,25 +93,6 @@ void MainWindow::init()
     }
 
     this->ui.downloadComboFormat->setCurrentIndex(lastFormat);
-
-
-    //*
-    //* Search Tab
-    //*
-    QWebEngineProfile* profile = new QWebEngineProfile;
-    this->searchPage = new SearchWebEnginePage(profile);
-    ui.searchWebEngineView->setPage(searchPage);
-    ui.searchWebEngineView->settings()->setAttribute(QWebEngineSettings::FocusOnNavigationEnabled, false);
-    ui.searchWebEngineView->setContextMenuPolicy(Qt::NoContextMenu);
-    connect(ui.searchWebEngineView->page(), SIGNAL(linkClicked(QUrl)), this, SLOT(handleSearchResultClicked(QUrl)));
-    connect(&searchTimer, SIGNAL(timeout()), this, SLOT(searchTimerTimeout()));
-    connect(cg, &ClipGrab::youtubeDlDownloadFinished, [=] {
-        YoutubeDl::find(true);
-        this->updateSearch("");
-        this->updateYoutubeDlVersionInfo();
-    });
-    connect(cg, &ClipGrab::searchFinished, this, &MainWindow::handleSearchResults);
-    cg->search();
 
     //*
     //* Settings Tab
@@ -229,32 +209,23 @@ void MainWindow::init()
     //* Drag and Drop
     //*
     this->setAcceptDrops(true);
-    this->ui.searchWebEngineView->setAcceptDrops(false);
 
     //*
     //*Keyboard shortcuts
     //*
     QSignalMapper* tabShortcutMapper = new QSignalMapper(this);
 
-    QShortcut* tabShortcutSearch = new QShortcut(QKeySequence(Qt::ControlModifier + Qt::Key_1), this);
-    tabShortcutMapper->setMapping(tabShortcutSearch, 0);
-    QShortcut* tabShortcutDownload = new QShortcut(QKeySequence(Qt::ControlModifier + Qt::Key_2), this);
-    tabShortcutMapper->setMapping(tabShortcutDownload, 1);
-    QShortcut* tabShortcutSettings = new QShortcut(QKeySequence(Qt::ControlModifier + Qt::Key_3), this);
-    tabShortcutMapper->setMapping(tabShortcutSettings, 2);
-    QShortcut* tabShortcutAbout = new QShortcut(QKeySequence(Qt::ControlModifier + Qt::Key_4), this);
-    tabShortcutMapper->setMapping(tabShortcutAbout, 3);
+    QShortcut* tabShortcutDownload = new QShortcut(QKeySequence(Qt::ControlModifier + Qt::Key_1), this);
+    tabShortcutMapper->setMapping(tabShortcutDownload, 0);
+    QShortcut* tabShortcutSettings = new QShortcut(QKeySequence(Qt::ControlModifier + Qt::Key_2), this);
+    tabShortcutMapper->setMapping(tabShortcutSettings, 1);
+    QShortcut* tabShortcutAbout = new QShortcut(QKeySequence(Qt::ControlModifier + Qt::Key_3), this);
+    tabShortcutMapper->setMapping(tabShortcutAbout, 2);
 
-    connect(tabShortcutSearch, SIGNAL(activated()), tabShortcutMapper, SLOT(map()));
     connect(tabShortcutDownload, SIGNAL(activated()), tabShortcutMapper, SLOT(map()));
     connect(tabShortcutSettings, SIGNAL(activated()), tabShortcutMapper, SLOT(map()));
     connect(tabShortcutAbout, SIGNAL(activated()), tabShortcutMapper, SLOT(map()));
     connect(tabShortcutMapper, SIGNAL(mapped(int)), this->ui.mainTab, SLOT(setCurrentIndex(int)));
-
-    findShortcutA = new QShortcut(QKeySequence("S"), this);
-    findShortcutB = new QShortcut(QKeySequence("Ctrl+S"), this);
-    connect(findShortcutA, &QShortcut::activated, this, &MainWindow::activate_find);
-    connect(findShortcutB, &QShortcut::activated, this, &MainWindow::activate_find);
 
     pasteShortcut = new QShortcut(QKeySequence::Paste, this);
     connect(pasteShortcut, SIGNAL(activated()), this, SLOT(copyFromClipBoard()));
@@ -297,6 +268,11 @@ void MainWindow::init()
         ui.label_4->hide();
         ui.verticalSpacer_9->changeSize(10, 0);
     }
+}
+
+void MainWindow::hide_logo() {
+    ui.label_4->hide();
+    ui.verticalSpacer_9->changeSize(10, 0);
 }
 
 void MainWindow::startDownload() {
@@ -377,7 +353,7 @@ void MainWindow::handleCurrentVideoStateChanged(video* video) {
 
     if (video->getState() != video::state::fetched) return;
 
-    ui.mainTab->setCurrentIndex(1);
+    ui.mainTab->setCurrentIndex(0);
     disableDownloadUi(false);
     ui.downloadLineEdit->setReadOnly(false);
     ui.downloadInfoBox->setText("<strong>" + video->getTitle() + "</strong>");
@@ -455,7 +431,7 @@ void MainWindow::compatibleUrlFoundInClipBoard(QString url) {
             Notifications::showMessage(tr("ClipGrab: Video discovered in your clipboard"), tr("ClipGrab has discovered the address of a compatible video in your clipboard. Click on this message to download it now."), &systemTrayIcon);
         } else if (cg->settings.value("Clipboard", "ask") == "always") {
             this->ui.downloadLineEdit->setText(url);
-            this->ui.mainTab->setCurrentIndex(1);
+            this->ui.mainTab->setCurrentIndex(0);
             this->setWindowState((windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
             this->show();
             this->activateWindow();
@@ -466,7 +442,7 @@ void MainWindow::compatibleUrlFoundInClipBoard(QString url) {
 
 void MainWindow::copyFromClipBoard() {
     QString url = QApplication::clipboard()->text();
-    ui.mainTab->setCurrentIndex(1);
+    ui.mainTab->setCurrentIndex(0);
     if (!url.isEmpty()) {
         this->ui.downloadLineEdit->setText(url);
     }
@@ -474,30 +450,23 @@ void MainWindow::copyFromClipBoard() {
 
 void MainWindow::activate_grab()
 {
-    ui.mainTab->setCurrentIndex(1);
+    ui.mainTab->setCurrentIndex(0);
     if ( ui.downloadLineEdit->text().isEmpty() && !QApplication::clipboard()->text().isEmpty() )
         ui.downloadLineEdit->setText( QApplication::clipboard()->text() );
     else
         ui.downloadStart->click();
 }
 
-void MainWindow::activate_find()
-{
-    ui.mainTab->setCurrentIndex(0);
-    if ( ui.searchLineEdit->text().isEmpty() && !QApplication::clipboard()->text().isEmpty() )
-        ui.searchLineEdit->setText( QApplication::clipboard()->text() );
-}
-
 void MainWindow::activate_format_cb()
 {
-    ui.mainTab->setCurrentIndex(1);
+    ui.mainTab->setCurrentIndex(0);
     if (ui.downloadComboFormat->isEnabled())
         ui.downloadComboFormat->showPopup();
 }
 
 void MainWindow::activate_quality_cb()
 {
-    ui.mainTab->setCurrentIndex(1);
+    ui.mainTab->setCurrentIndex(0);
     if (ui.downloadComboQuality->isEnabled())
         ui.downloadComboQuality->showPopup();
 }
@@ -505,7 +474,7 @@ void MainWindow::activate_quality_cb()
 void MainWindow::systemTrayMessageClicked() {
     if (QApplication::activeModalWidget() == nullptr) {
         this->ui.downloadLineEdit->setText(cg->clipboardUrl);
-        this->ui.mainTab->setCurrentIndex(1);
+        this->ui.mainTab->setCurrentIndex(0);
         this->setWindowState((windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
         this->show();
         this->activateWindow();
@@ -677,80 +646,6 @@ void MainWindow::on_settingsUseMetadata_stateChanged(int state)
     cg->settings.setValue("UseMetadata", state == Qt::Checked);
 }
 
-void MainWindow::on_searchLineEdit_textChanged(QString keywords)
-{
-    if (keywords.startsWith("https://") || keywords.startsWith("http://")) {
-        ui.mainTab->setCurrentIndex(1);
-        ui.downloadLineEdit->setText(keywords);
-        return;
-    }
-
-    bool isTimerActive = searchTimer.isActive();
-    searchTimer.stop();
-    searchTimer.setSingleShot(true);
-    searchTimer.start(1500);
-
-    if (isTimerActive) return;
-    this->ui.searchWebEngineView->page()->load(QUrl("qrc:///search/loading-progress.html"));
-}
-
-void MainWindow::updateSearch(QString keywords) {
-    if (this->ui.searchWebEngineView->page()->url().toString() != "qrc:///search/loading-progress.html") {
-        this->ui.searchWebEngineView->page()->load(QUrl("qrc:///search/loading-progress.html"));
-    }
-    cg->search(keywords);
-}
-
-void MainWindow::handleSearchResults(video* searchPlaylist)
-{
-    QList<video*> videos = searchPlaylist->getPlaylistVideos();
-
-    QString searchHtml;
-    #ifdef Q_OS_MAC
-        QString fontFamily = "Helvetica Neue";
-    #else
-        QFontDatabase fontDatabase;
-        QString font = fontDatabase.systemFont(QFontDatabase::GeneralFont).family();
-        QString fontFamily = "'" + font + "',  sans-serif";
-    #endif
-    searchHtml.append("<!doctype html>");
-    searchHtml.append("<html>");
-    searchHtml.append("<head>");
-    searchHtml.append("<style>body {font-family: " + fontFamily + "}</style>");
-    searchHtml.append("<link rel=\"stylesheet\" href=\"qrc:///search/search-styles.css\"></link>");
-    searchHtml.append("</head>");
-    searchHtml.append("<body>");
-
-    for (int i = 0; i < videos.length(); i++) {
-        QString link = videos.at(i)->getUrl();
-        QString title = videos.at(i)->getTitle();
-        QString thumbnail = videos.at(i)->getThumbnail();
-        QString duration = cg->humanizeSeconds(videos.at(i)->getDuration());
-        searchHtml.append("<a href=\"" + link + "\" class=\"entry\">");
-        searchHtml.append("<span class=\"title\">" + title + "</span>");
-        searchHtml.append("<span class=\"thumbnail\" style=\"background-image: url('" + thumbnail + "')\"</span>");
-        if (!duration.isEmpty()) {
-            searchHtml.append("<span class=\"duration\">" + duration + "</span>");
-        }
-        searchHtml.append("</a>");
-    }
-
-    searchHtml.append("</body>");
-    searchHtml.append("</html>");
-    if (videos.length() == 0) {
-        QFile loadingFailedHTML(":/search/loading-failed.html");
-        loadingFailedHTML.open(QFile::ReadOnly);
-        searchHtml = QString(loadingFailedHTML.readAll()).replace("%NORESULTS%", tr("No results found."));
-    }
-    this->ui.searchWebEngineView->page()->setHtml(searchHtml);
-}
-
-void MainWindow::handleSearchResultClicked(const QUrl & url)
-{
-    this->ui.downloadLineEdit->setText(url.toString());
-    this->ui.mainTab->setCurrentIndex(1);
-}
-
 void MainWindow::on_downloadComboFormat_currentIndexChanged(int index)
 {
     cg->settings.setValue("LastFormat", index);
@@ -856,7 +751,7 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 void MainWindow::dropEvent(QDropEvent *event)
 {
     ui.downloadLineEdit->setText(event->mimeData()->text());
-    ui.mainTab->setCurrentIndex(1);
+    ui.mainTab->setCurrentIndex(0);
 }
 
 void MainWindow::updateYoutubeDlVersionInfo() {
@@ -898,11 +793,6 @@ void MainWindow::on_downloadComboQuality_currentIndexChanged(int index)
     }
 
     cg->settings.setValue("rememberedVideoQuality", ui.downloadComboQuality->itemData(index, Qt::UserRole).toInt());
-}
-
-void MainWindow::searchTimerTimeout()
-{
-    updateSearch(this->ui.searchLineEdit->text());
 }
 
 void MainWindow::on_downloadTree_doubleClicked(const QModelIndex &index)
