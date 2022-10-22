@@ -211,7 +211,7 @@
     </message>
     <message>
         <source>No results found.</source>
-        <translation>Nenhum resultado encontrado.</translation>
+        <translation type="vanished">Nenhum resultado encontrado.</translation>
     </message>
     <message>
         <source>Download finished</source>
@@ -229,6 +229,11 @@
         <source>ClipGrab has finished downloading and converting all selected videos.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>youtube-dl: %1 (%2)
+Python: %3 (%4)</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>MainWindowClass</name>
@@ -238,11 +243,11 @@
     </message>
     <message>
         <source>Search</source>
-        <translation>Busca</translation>
+        <translation type="vanished">Busca</translation>
     </message>
     <message>
         <source>Enter keywords in the box below in order to search videos on YouTube</source>
-        <translation>Escreva palavras-chave no espaço abaixo para procurar vídeos no YouTube</translation>
+        <translation type="vanished">Escreva palavras-chave no espaço abaixo para procurar vídeos no YouTube</translation>
     </message>
     <message>
         <source>Downloads</source>
@@ -520,6 +525,28 @@ ClipGrab já está disponível em vários idiomas. Se o ClipGrab ainda não foi 
         <source>&lt;h2&gt;Thanks&lt;/h2&gt;
 ClipGrab relies on the work of the Qt project, the ffmpeg team, and the youtube-dl team.&lt;br&gt;
 Visit &lt;a href=&quot;https://www.qt.io&quot;&gt;qt.io&lt;/a&gt;, &lt;a href=&quot;https://ffmpeg.org&quot;&gt;ffmpeg.org&lt;/a&gt;, and &lt;a href=&quot;https://youtube-dl.org&quot;&gt;youtube-dl.org&lt;/a&gt; for further information.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Force IPv4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Check clipgrab.org for updates at startup</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show ClipGrab Logo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keep Download URL</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;h2&gt;Thanks&lt;/h2&gt;
+ClipGrab relies on the work of the Qt project, the ffmpeg team, and the youtube-dl team.&lt;br&gt;
+Visit &lt;a href=&quot;https://www.qt.io&quot;&gt;qt.io&lt;/a&gt;, &lt;a href=&quot;https://ffmpeg.org&quot;&gt;ffmpeg.org&lt;/a&gt;, and &lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt; for further information.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
