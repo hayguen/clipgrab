@@ -30,7 +30,6 @@ HEADERS += \
     src/mainwindow.h \
     src/video.h \
     src/notifications.h \
-    src/message_dialog.h \
     src/clipgrab.h \
     src/web_engine_view.h \
     src/youtube_dl.h
@@ -38,8 +37,7 @@ FORMS += \
     src/ui/metadata-dialog.ui \
     src/ui/helper_downloader.ui \
     src/ui/mainwindow.ui \
-    src/ui/update_message.ui \
-    src/ui/message_dialog.ui
+    src/ui/update_message.ui
 SOURCES += \
     src/converter.cpp \
     src/converter_copy.cpp \
@@ -50,7 +48,6 @@ SOURCES += \
     src/mainwindow.cpp \
     src/video.cpp \
     src/notifications.cpp \
-    src/message_dialog.cpp \
     src/clipgrab.cpp \
     src/web_engine_view.cpp \
     src/youtube_dl.cpp

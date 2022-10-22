@@ -38,7 +38,6 @@ along with ClipGrab.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "ui_update_message.h"
 #include "ui_helper_downloader.h"
-#include "message_dialog.h"
 
 struct format
 {

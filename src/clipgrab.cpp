@@ -416,6 +416,7 @@ void ClipGrab::parseUpdateInfo(QNetworkReply* reply)
 
             if (command.attribute("repeat", "false") != "true")
             {
+                // @todo: what is this???
                 QString id = "cmd-";
                 if (command.hasAttribute("id"))
                 {
@@ -439,31 +440,11 @@ void ClipGrab::parseUpdateInfo(QNetworkReply* reply)
 
             if (command.attribute("type") == "message")
             {
-                messageDialog* dialog = new messageDialog(QApplication::activeWindow());
-                dialog->setUrl(QUrl(command.attribute("uri")));
-
-                if (command.hasAttribute("title")) {
-                    dialog->setWindowTitle(command.attribute("title"));
-                }
-                if (command.hasAttribute("link-policy")) {
-                    if (command.attribute("link-policy") == "open")
-                    {
-                        dialog->setLinkPolicy("open");
-                    }
-                    else if (command.attribute("link-policy") == "open-external")
-                    {
-                        dialog->setLinkPolicy("open-external");
-                    }
-                    else if (command.attribute("link-policy") == "follow")
-                    {
-                        dialog->setLinkPolicy("follow");
-                    }
-                }
-                dialog->exec();
+                qDebug() << "parseUpdateInfo wanted to display " << QUrl(command.attribute("uri")).toString();
             }
             else if ((command.attribute("type") == "open"))
             {
-                QDesktopServices::openUrl(QUrl(command.attribute("uri")));
+                qDebug() << "parseUpdateInfo wanted to display " << QUrl(command.attribute("uri")).toString();
             }
             else if ((command.attribute("type") == "set"))
             {
@@ -471,7 +452,7 @@ void ClipGrab::parseUpdateInfo(QNetworkReply* reply)
             }
             else if (command.attribute("type") == "die")
             {
-                QApplication::quit();
+                qDebug() << "parseUpdateInfo wanted to quit application!";
             }
         }
     }
