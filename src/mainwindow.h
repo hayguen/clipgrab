@@ -60,54 +60,6 @@ signals:
         void intercepted(const QUrl & url);
 };
 
-class SearchWebEnginePage : public QWebEnginePage
-{
-    Q_OBJECT
-public:
-    SearchWebEnginePage(QWebEngineProfile* profile, QObject* parent = 0) :  QWebEnginePage(profile, parent)
-    {
-        this->setAudioMuted(true);
-        SearchWebEngineUrlRequestInterceptor* interceptor = new SearchWebEngineUrlRequestInterceptor();
-        this->profile()->setRequestInterceptor(interceptor);
-        connect(interceptor, SIGNAL(intercepted(QUrl)), this, SLOT(handleInterceptedUrl(QUrl)));
-    }
-
-
-    bool acceptNavigationRequest(const QUrl & url, QWebEnginePage::NavigationType type, bool isMainFrame)
-    {
-        if (!isMainFrame) return true;
-
-        if (type == QWebEnginePage::NavigationTypeTyped)
-        {
-            if (QRegExp("https://(www|m)\\.youtube.com/watch").indexIn(url.toString()) > -1)
-            {
-                emit linkClicked(url);
-                return false;
-            }
-            return true;
-        }
-        if (type == QWebEnginePage::NavigationTypeLinkClicked)
-        {
-            if (QRegExp("https://(www|m)\\.youtube.com").indexIn(url.toString()) > -1)
-            {
-                emit linkClicked(url);
-            }
-        }
-        return false;
-    }
-protected:
-    void javaScriptConsoleMessage(QWebEnginePage::JavaScriptConsoleMessageLevel /*level*/, const QString & /*message*/, int /*lineNumber*/, const QString & /*sourceID*/) {
-        //Don't log anything
-    }
-public slots:
-    void handleInterceptedUrl(const QUrl & url) {
-        emit linkIntercepted(url);
-    }
-signals:
-    void linkClicked(const QUrl & url);
-    void linkIntercepted(const QUrl & url);
-};
-
 
 class MainWindow : public QMainWindow
 {
@@ -117,19 +69,18 @@ public:
     MainWindow(ClipGrab* cg, QWidget *parent = 0, Qt::WindowFlags flags = 0);
     ~MainWindow();
     void init();
+    void hide_logo();
 
     ClipGrab* cg;
 
 public slots:
     void startDownload();
-    void activate_find();
     void copyFromClipBoard();
     void activate_grab();
     void activate_format_cb();
     void activate_quality_cb();
     void compatibleUrlFoundInClipBoard(QString url);
     void targetFileSelected(video* video, QString target);
-    void searchTimerTimeout();
 
 private:
     Ui::MainWindowClass ui;
@@ -138,8 +89,6 @@ private:
      Ui::MetadataDialog mdui;
      QDialog* metadataDialog;
      QSystemTrayIcon systemTrayIcon;
-     QShortcut * findShortcutA;
-     QShortcut * findShortcutB;
      QShortcut * grabShortcutA;
      QShortcut * grabShortcutB;
      QShortcut * pasteShortcut;
@@ -155,9 +104,6 @@ private:
      void dragEnterEvent(QDragEnterEvent *event);
      void dropEvent(QDropEvent *event);
      bool updatingComboQuality;
-     SearchWebEnginePage* searchPage;
-     QTimer searchTimer;
-     void updateSearch(QString keywords);
      void updateYoutubeDlVersionInfo();
 
 private slots:
@@ -165,7 +111,6 @@ private slots:
 
     void on_mainTab_currentChanged(int index);
     void on_downloadComboFormat_currentIndexChanged(int index);
-    void on_searchLineEdit_textChanged(QString );
     void on_settingsUseMetadata_stateChanged(int );
     void on_label_linkActivated(QString link);
     void on_downloadLineEdit_returnPressed();
@@ -185,8 +130,6 @@ private slots:
     void settingsClipboard_toggled(bool);
     void settingsNotifications_toggled(bool);
     void settingsProxyChanged();
-    void handleSearchResults(video*);
-    void handleSearchResultClicked(const QUrl & url);
 
     void handleFinishedConversion(video*);
     void on_settingsLanguage_currentIndexChanged(int index);

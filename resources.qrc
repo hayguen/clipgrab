@@ -43,11 +43,5 @@
     <qresource prefix="/crt">
         <file>mozilla-root-cas.txt</file>
     </qresource>
-    <qresource prefix="/search">
-        <file>loading-progress.html</file>
-        <file>loading-styles.css</file>
-        <file>loading-failed.html</file>
-        <file>search-styles.css</file>
-    </qresource>
     <qresource prefix="/"/>
 </RCC>
