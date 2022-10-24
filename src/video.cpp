@@ -399,10 +399,12 @@ QString video::getSafeFilename() {
     return title.replace(QRegularExpression("#|%|&|\\{|\\}|\\\\|<|>|\\*|\\?|/|\\$|!|'|\"|:|@|\\+|`|\\||=|"), "");
 }
 
-void video::setConverter(converter* targetConverter, int targetConverterMode) {
+void video::setConverter(converter* targetConverter, int targetConverterMode, QString audio_bitrate, QString audio_quality) {
     this->targetConverter = targetConverter->createNewInstance();
     this->targetConverterMode = targetConverterMode;
     this->audioOnly = targetConverter->isAudioOnly(targetConverterMode);
+    this->audio_bitrate = audio_bitrate;
+    this->audio_quality = audio_quality;
 
     connect(this->targetConverter, &converter::conversionFinished, this, &video::handleConversionFinished);
     connect(this->targetConverter, &converter::error, this, &video::handleConversionError);
@@ -503,7 +505,10 @@ void video::handleProcessFinished(int /*exitCode*/, QProcess::ExitStatus exitSta
             state = state::converting;
             QFile* file = new QFile();
             file->setFileName(finalDownloadFilename);
-            targetConverter->startConversion(file, targetFilename, qualities.at(selectedQuality).containerName, metaTitle, metaArtist, targetConverterMode);
+            targetConverter->startConversion(
+                file, targetFilename, qualities.at(selectedQuality).containerName, metaTitle, metaArtist,
+                targetConverterMode, this->audio_bitrate, this->audio_quality
+                );
         } else {
             state = state::error;
         }

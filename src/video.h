@@ -98,7 +98,7 @@ public:
     virtual void setMetaTitle(QString title);
     virtual void setMetaArtist(QString artist);
     virtual void setTargetFilename(QString filename);
-    virtual void setConverter(converter*, int);
+    virtual void setConverter(converter*, int, QString audio_bitrate, QString audio_quality);
     virtual bool setQuality(int n);
 
 protected:
@@ -129,6 +129,8 @@ protected:
     int targetConverterMode;
     QString targetFilename;
     QString finalFilename;
+    QString audio_bitrate;
+    QString audio_quality;
 
     QList<video*> playlistVideos;
 

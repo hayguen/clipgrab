@@ -45,7 +45,6 @@ struct format
     converter* _converter;
     QString _name;
     int _mode;
-    bool _audioOnly;
 };
 
 struct language

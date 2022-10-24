@@ -432,6 +432,40 @@ padding: 10px;
                  </widget>
                 </item>
                 <item row="7" column="0">
+                 <widget class="QLabel" name="label_audio_bitrate">
+                  <property name="text">
+                   <string>Here you can configure FFmpeg's target bitrate for audio only (mp3) - in kBit: 4 - 384</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="8" column="0">
+                 <widget class="QLineEdit" name="settingsAudioBitrate">
+                  <property name="maximumSize">
+                   <size>
+                    <width>100</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                 </widget>
+                </item>
+                <item row="9" column="0">
+                 <widget class="QLabel" name="label_audio_quality">
+                  <property name="text">
+                   <string>Here you can configure FFmpeg's target quality for audio only (ogg): 1 - 9</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="10" column="0">
+                 <widget class="QLineEdit" name="settingsAudioQuality">
+                  <property name="maximumSize">
+                   <size>
+                    <width>100</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                 </widget>
+                </item>
+                <item row="11" column="0">
                  <spacer name="verticalSpacer_5">
                   <property name="orientation">
                    <enum>Qt::Vertical</enum>
@@ -1256,14 +1290,6 @@ ClipGrab is already available in many languages. If ClipGrab has not been transl
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <customwidgets>
-  <customwidget>
-   <class>CGWebEngineView</class>
-   <extends>QWidget</extends>
-   <header location="global">web_engine_view.h</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <tabstops>
   <tabstop>downloadLineEdit</tabstop>
   <tabstop>downloadComboFormat</tabstop>

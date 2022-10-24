@@ -126,6 +126,8 @@ private slots:
     void on_settingsBrowseTargetPath_clicked();
     void on_settingsSavedPath_textChanged(QString );
     void on_settingsNeverAskForPath_stateChanged(int);
+    void on_settingsAudioBitrate_textChanged(QString );
+    void on_settingsAudioQuality_textChanged(QString );
 
     void settingsClipboard_toggled(bool);
     void settingsNotifications_toggled(bool);

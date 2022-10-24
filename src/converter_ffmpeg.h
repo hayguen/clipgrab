@@ -36,6 +36,9 @@ class ffmpegThread : public QThread
     QString container;
     QString metaTitle;
     QString metaArtist;
+    QString audio_bitrate;
+    QString audio_quality;
+    bool audio_to_mono;
     QStringList acceptedAudioCodec;
     QStringList acceptedVideoCodec;
     QString ffmpegCall;
@@ -56,12 +59,35 @@ public:
     converter_ffmpeg();
 
     converter* createNewInstance();
-    void startConversion(QFile* file, QString& target, QString originalExtension, QString metaTitle, QString metaArtist, int mode);
+    void startConversion(
+        QFile* file,
+        QString& target,
+        QString originalExtension,
+        QString metaTitle,
+        QString metaArtist,
+        int mode,
+        QString audio_bitrate,
+        QString audio_quality
+        );
     void concatenate(QList<QFile*> files, QFile* target, QString originalFormat);
     bool isAvailable();
-    QString getExtensionForMode(int mode);
-    bool isAudioOnly(int mode);
+    QString getExtensionForMode(int mode) const;
+    bool isAudioOnly(int mode) const;
+    bool isMono(int /*mode*/) const;
+    bool hasMetaInfo(int /*mode*/) const;
     ffmpegThread ffmpeg;
+
+private:
+    enum Mode {
+        mode_mp4 = 0,
+        mode_wmv,
+        mode_ogg,
+        mode_audio,
+        mode_mp3,
+        mode_ogg_audio,
+        mode_pcm,
+        mode_pcm_mono
+    };
 
 public slots:
     void emitFinished();

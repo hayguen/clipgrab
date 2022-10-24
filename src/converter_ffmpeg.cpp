@@ -98,37 +98,58 @@ void ffmpegThread::run()
 
         if (acceptedAudioCodec[0] == "none")
         {
-            ffmpegCall = ffmpegCall + " -an";
+            ffmpegCall = ffmpegCall + " -an";  // disable audio
         }
         else
         {
+            if ( audio_to_mono )
+            {
+                ffmpegCall = ffmpegCall + " -ac 1";
+            }
+
             if (audioCodecAccepted == true)
             {
                 ffmpegCall = ffmpegCall + " -acodec copy";
             }
             else
             {
-                if (acceptedAudioCodec[0] == "libvorbis")
+                if (acceptedAudioCodec[0] == "wav")
                 {
+                    // just plain uncompressed wav"
+                }
+                else if (acceptedAudioCodec[0] == "libvorbis")
+                {
+                    bool conv_ok;
+                    QString opt_str = audio_quality.trimmed();
+                    int audio_qual = opt_str.toInt(&conv_ok);
+                    QString qual_opt = (!opt_str.isEmpty() && conv_ok && 1 <= audio_qual && audio_qual <= 9) ? opt_str : "9";
+                    qDebug() << "ffmpegThread::run(): accepting audio codec libvorbis with audio quality: -aq " << qual_opt;
                     if (audioCodec.contains("libvorbis"))
                     {
-                        ffmpegCall = ffmpegCall + " -acodec libvorbis -aq 9";
+                        ffmpegCall = ffmpegCall + " -acodec libvorbis -aq " + qual_opt;
                     }
                     else
                     {
-                        ffmpegCall = ffmpegCall + " -acodec vorbis -aq 9 -strict experimental";
+                        ffmpegCall = ffmpegCall + " -acodec vorbis -aq " + qual_opt + " -strict experimental";
                     }
                 }
                 else
                 {
-                    ffmpegCall = ffmpegCall + " -acodec " + acceptedAudioCodec[0] + " -ab 256k";
+                    bool conv_ok;
+                    QString opt_str = audio_bitrate.trimmed();
+                    int rate = opt_str.toInt(&conv_ok);
+                    QString rate_opt = (!opt_str.isEmpty() && conv_ok && 4 <= rate && rate <= 384) ? opt_str : "256";
+                    rate_opt = rate_opt + "k";
+                    qDebug() << "ffmpegThread::run(): accepting/using audio codec " << acceptedAudioCodec[0] << " of " << acceptedAudioCodec;
+                    qDebug() << "ffmpegThread::run(): accepting/using audio codec .. with bitrate " + rate_opt;
+                    ffmpegCall = ffmpegCall + " -acodec " + acceptedAudioCodec[0] + " -ab " + rate_opt;
                 }
             }
         }
 
         if (acceptedVideoCodec[0] == "none")
         {
-            ffmpegCall = ffmpegCall + " -vn";
+            ffmpegCall = ffmpegCall + " -vn";  // disable video
         }
         else
         {
@@ -173,6 +194,9 @@ void ffmpegThread::run()
                 else if (audioCodec.contains("opus")) {
                     container = "opus";
                 }
+                else {
+                    container = "wav";  // last resort
+                }
 
             }
         }
@@ -216,78 +240,139 @@ converter_ffmpeg::converter_ffmpeg()
     this->_modes.append(tr("MPEG4"));
     this->_modes.append(tr("WMV (Windows)"));
     this->_modes.append(tr("OGG Theora"));
+    this->_modes.append(tr("Original (audio only)"));
     this->_modes.append(tr("MP3 (audio only)"));
     this->_modes.append(tr("OGG Vorbis (audio only)"));
-    this->_modes.append(tr("Original (audio only)"));
+    this->_modes.append(tr("PCM/WAV (audio only)"));
+    this->_modes.append(tr("PCM/WAV (mono, audio only)"));
 }
 
-
-QString converter_ffmpeg::getExtensionForMode(int mode)
+QString converter_ffmpeg::getExtensionForMode(int mode) const
 {
-    switch (mode)
+    switch ((Mode)mode)
     {
-        case 0:
+        case mode_mp4:
             return "mp4";
-        case 1:
+        case mode_wmv:
             return "wmv";
-        case 2:
+        case mode_ogg:
             return "ogg";
-        case 3:
+        case mode_audio:
+            return "";
+        case mode_mp3:
             return "mp3";
-        case 4:
+        case mode_ogg_audio:
             return "ogg";
+        case mode_pcm:
+        case mode_pcm_mono:
+            return "wav";
     }
     return "";
 }
 
-bool converter_ffmpeg::isAudioOnly(int mode) {
-    switch (mode)
+bool converter_ffmpeg::isAudioOnly(int mode) const {
+    switch ((Mode)mode)
     {
-        case 3:
-        case 4:
-        case 5:
+        case mode_audio:
+        case mode_mp3:
+        case mode_ogg_audio:
+        case mode_pcm:
+        case mode_pcm_mono:
             return true;
         default:
+        case mode_mp4:
+        case mode_wmv:
+        case mode_ogg:
+            return false;
+    }
+}
+
+bool converter_ffmpeg::isMono(int mode) const {
+    switch ((Mode)mode)
+    {
+    case mode_pcm_mono:
+        return true;
+    default:
+    case mode_mp4:
+    case mode_wmv:
+    case mode_ogg:
+    case mode_audio:
+    case mode_mp3:
+    case mode_ogg_audio:
+    case mode_pcm:
         return false;
     }
 }
 
+bool converter_ffmpeg::hasMetaInfo(int mode) const {
+    switch ((Mode)mode)
+    {
+    case mode_mp3:
+    case mode_ogg_audio:
+        return true;
+    case mode_mp4:
+    case mode_wmv:
+    case mode_ogg:
+    case mode_audio:
+    case mode_pcm:
+    case mode_pcm_mono:
+        return false;
+    }
+    return false;
+}
 
 
-void converter_ffmpeg::startConversion(QFile* inputFile, QString& target, QString /*originalExtension*/, QString metaTitle, QString metaArtist, int mode)
+
+void converter_ffmpeg::startConversion(
+    QFile* inputFile,
+    QString& target,
+    QString /*originalExtension*/,
+    QString metaTitle,
+    QString metaArtist,
+    int mode,
+    QString audio_bitrate,
+    QString audio_quality
+    )
 {
     QStringList acceptedAudio;
     QStringList acceptedVideo;
     QString container;
+    bool audio_to_mono = isMono(mode);
 
-    switch (mode)
+    switch ((Mode)mode)
     {
-    case 0:
+    case mode_mp4:
         acceptedAudio <<  "aac" << "libvo_aacenc" << "mp3";
         acceptedVideo << "mpeg4" << "h264";
         container = "mp4";
         break;
-    case 1:
+    case mode_wmv:
         acceptedAudio << "wmav2";
         acceptedVideo << "wmv2";
         container = "wmv";
         break;
-    case 2:
+    case mode_ogg:
         acceptedAudio << "libvorbis" << "vorbis";
         acceptedVideo << "libtheora" << "theora";
         container = "ogv";
         break;
-    case 3:
+    case mode_mp3:
         acceptedAudio << "libmp3lame" << "mp3";
         acceptedVideo << "none";
         container = "mp3";
         break;
-    case 4:
+    case mode_ogg_audio:
         acceptedAudio << "libvorbis" << "vorbis";
         acceptedVideo << "none";
         container = "ogg";
         break;
-    case 5:
+    case mode_pcm:
+    case mode_pcm_mono:
+        acceptedAudio << "wav";
+        acceptedVideo << "none";
+        container = "wav";
+        break;
+    case mode_audio:
         acceptedAudio << "libvorbis" << "vorbis" << "libmp3lame" << "mp3" << "wmav2" << "libvo_aaenc" << "aac" << "opus";
         acceptedVideo << "none";
         container = "";
@@ -298,8 +383,11 @@ void converter_ffmpeg::startConversion(QFile* inputFile, QString& target, QStrin
     ffmpeg.inputFile = inputFile;
     ffmpeg.acceptedAudioCodec = acceptedAudio;
     ffmpeg.acceptedVideoCodec = acceptedVideo;
+    ffmpeg.audio_to_mono = audio_to_mono;
     ffmpeg.metaTitle = metaTitle;
     ffmpeg.metaArtist = metaArtist;
+    ffmpeg.audio_bitrate = audio_bitrate;
+    ffmpeg.audio_quality = audio_quality;
     ffmpeg.target = target;
     ffmpeg.container = container;
     connect(&ffmpeg, SIGNAL(finished()), this, SLOT(emitFinished()));

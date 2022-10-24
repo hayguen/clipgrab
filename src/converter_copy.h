@@ -33,9 +33,20 @@ public:
     converter_copy();
 
     converter* createNewInstance();
-    void startConversion(QFile* file, QString& target, QString originalExtension, QString metaTitle, QString metaArtist, int mode);
+    void startConversion(
+        QFile* file,
+        QString& target,
+        QString originalExtension,
+        QString metaTitle,
+        QString metaArtist,
+        int mode,
+        QString audio_bitrate,
+        QString audio_quality
+        );
     bool isAvailable();
-    bool isAudioOnly(int /*mode*/) {return false;};
+    bool isAudioOnly(int /*mode*/) const {return false;}
+    bool isMono(int /*mode*/) const {return false;}
+    bool hasMetaInfo(int /*mode*/) const { return false;}
 };
 
 #endif // CONVERTER_COPY_H

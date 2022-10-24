@@ -188,18 +188,16 @@ ClipGrab::ClipGrab()
     converters.append(new converter_copy);
     converters.append(new converter_ffmpeg);
 
-    converter* tmpConverter;
-    QList<QString> tmpModes;
-    format tmpFormat;
     for (int i = 0; i < converters.size(); ++i)
     {
-        tmpConverter = converters.at(i);
+        converter* tmpConverter = converters.at(i);
         connect(tmpConverter, SIGNAL(error(QString)), this, SLOT(errorHandler(QString)));
         if (tmpConverter->isAvailable())
         {
-            tmpModes = tmpConverter->getModes();
+            QList<QString> tmpModes = tmpConverter->getModes();
             for (int i = 0; i < tmpModes.size(); ++i)
             {
+                format tmpFormat;
                 tmpFormat._converter = tmpConverter;
                 tmpFormat._mode = i;
                 tmpFormat._name = tmpModes.at(i);

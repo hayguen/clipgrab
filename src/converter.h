@@ -34,10 +34,21 @@ public:
     converter();
 
     virtual converter* createNewInstance();
-    virtual void startConversion(QFile* inputFile, QString& target, QString originalExtension, QString metaTitle, QString metaArtist, int mode);
-    QList<QString> getModes();
-    virtual QString getExtensionForMode(int mode);
-    virtual bool isAudioOnly(int /*mode*/) { return false;};
+    virtual void startConversion(
+        QFile* inputFile,
+        QString& target,
+        QString originalExtension,
+        QString metaTitle,
+        QString metaArtist,
+        int mode,
+        QString audio_bitrate,
+        QString audio_quality
+        );
+    QList<QString> getModes() const;
+    virtual QString getExtensionForMode(int mode) const;
+    virtual bool isAudioOnly(int /*mode*/) const { return false;}
+    virtual bool isMono(int /*mode*/) const { return false;}
+    virtual bool hasMetaInfo(int /*mode*/) const { return false;}
     virtual bool isAvailable();
 
     QString target;

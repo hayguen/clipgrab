@@ -28,7 +28,16 @@ converter_copy::converter_copy()
     this->_modes.append(tr("Original"));
 }
 
-void converter_copy::startConversion(QFile* inputFile, QString& target, QString originalExtension, QString /*metaTitle*/, QString /*metaArtist*/, int /*mode*/)
+void converter_copy::startConversion(
+    QFile* inputFile,
+    QString& target,
+    QString originalExtension,
+    QString /*metaTitle*/,
+    QString /*metaArtist*/,
+    int /*mode*/,
+    QString /*audio_bitrate*/,
+    QString /*audio_quality*/
+    )
 {
     QDir fileCheck;
     if (fileCheck.exists(target + "." + originalExtension))

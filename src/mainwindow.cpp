@@ -108,6 +108,10 @@ void MainWindow::init()
     this->ui.settingsSavedPath->setText(cg->settings.value("savedPath", QStandardPaths::writableLocation(QStandardPaths::DesktopLocation)).toString());
     this->ui.settingsSaveLastPath->setChecked(cg->settings.value("saveLastPath", true).toBool());
     ui.settingsNeverAskForPath->setChecked(cg->settings.value("NeverAskForPath", false).toBool());
+    QString audio_bitrate = cg->settings.value("FFmpeg-audio-bitrate", "256").toString();
+    QString audio_quality = cg->settings.value("FFmpeg-audio-quality", "9").toString();
+    this->ui.settingsAudioBitrate->setText(audio_bitrate);
+    this->ui.settingsAudioQuality->setText(audio_quality);
 
     ui.settingsUseMetadata->setChecked(cg->settings.value("UseMetadata", false).toBool());
     connect(this->ui.settingsUseMetadata, SIGNAL(stateChanged(int)), this, SLOT(on_settingsUseMetadata_stateChanged(int)));
@@ -308,8 +312,12 @@ void MainWindow::targetFileSelected(video* video, QString target)
         ui.settingsSavedPath->setText(targetDir);
     }
 
+    const int formatIdx = ui.downloadComboFormat->currentIndex();
     if (cg->settings.value("UseMetadata", false).toBool() == true) {
-        if (ui.downloadComboFormat->currentIndex() == 4 || ui.downloadComboFormat->currentIndex() == 5) {
+        int mode = cg->formats.at(formatIdx)._mode;
+        bool hasMetaInfo = cg->formats.at(formatIdx)._converter->hasMetaInfo(mode);
+        if (hasMetaInfo) {
+            qDebug() << "opening meta info dialog";
             metadataDialog = new QDialog;
             mdui.setupUi(metadataDialog);
             mdui.title->setText(video->getTitle());
@@ -325,7 +333,9 @@ void MainWindow::targetFileSelected(video* video, QString target)
     }
 
     video->setQuality(ui.downloadComboQuality->currentIndex());
-    video->setConverter(cg->formats.at(ui.downloadComboFormat->currentIndex())._converter, cg->formats.at(ui.downloadComboFormat->currentIndex())._mode);
+    QString audio_bitrate = cg->settings.value("FFmpeg-audio-bitrate", "256").toString();
+    QString audio_quality = cg->settings.value("FFmpeg-audio-quality", "9").toString();
+    video->setConverter(cg->formats.at(formatIdx)._converter, cg->formats.at(formatIdx)._mode, audio_bitrate, audio_quality);
     video->setTargetFilename(target);
     cg->enqueueDownload(video);
 
@@ -384,6 +394,16 @@ void MainWindow::handleCurrentVideoStateChanged(video* video) {
 void MainWindow::on_settingsSavedPath_textChanged(QString string)
 {
     this->cg->settings.setValue("savedPath", string);
+}
+
+void MainWindow::on_settingsAudioBitrate_textChanged(QString s )
+{
+    this->cg->settings.setValue("FFmpeg-audio-bitrate", s);
+}
+
+void MainWindow::on_settingsAudioQuality_textChanged(QString s)
+{
+    this->cg->settings.setValue("FFmpeg-audio-quality", s);
 }
 
 void MainWindow::on_settingsBrowseTargetPath_clicked()

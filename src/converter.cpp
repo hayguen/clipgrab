@@ -28,16 +28,25 @@ converter::converter()
 {
 }
 
-void converter::startConversion(QFile* /*inputFile*/, QString& /*targetPath*/, QString /*originalExtension*/, QString /*metaTitle*/, QString /*metaArtist*/, int /*mode*/)
+void converter::startConversion(
+    QFile* /*inputFile*/,
+    QString& /*targetPath*/,
+    QString /*originalExtension*/,
+    QString /*metaTitle*/,
+    QString /*metaArtist*/,
+    int /*mode*/,
+    QString /*audio_bitrate*/,
+    QString /*audio_quality*/
+    )
 {
 }
 
-QList<QString> converter::getModes()
+QList<QString> converter::getModes() const
 {
     return _modes;
 }
 
-QString converter::getExtensionForMode(int /*mode*/)
+QString converter::getExtensionForMode(int /*mode*/) const
 {
     return "";
 }
