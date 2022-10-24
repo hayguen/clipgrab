@@ -153,18 +153,81 @@ padding: 10px;
         <string>Downloads</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_4">
-        <item row="4" column="4">
-         <widget class="QPushButton" name="downloadStart">
-          <property name="enabled">
-           <bool>false</bool>
+        <item row="0" column="0" colspan="5">
+         <widget class="QLabel" name="downloadInfoBox">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>48</height>
+           </size>
           </property>
           <property name="text">
-           <string>Grab this clip!</string>
+           <string>Please enter the link to the video you want to download in the field below.</string>
+          </property>
+          <property name="textFormat">
+           <enum>Qt::RichText</enum>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
-        <item row="4" column="3">
-         <widget class="QComboBox" name="downloadComboQuality">
+        <item row="1" column="0" colspan="5">
+         <layout class="QGridLayout" name="gridLayout_lines">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_clip_content">
+            <property name="text">
+             <string>Clipboard:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="clipboard_content">
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QPushButton" name="copy_from_clip">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Copy</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_dn_url">
+            <property name="text">
+             <string>URL:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1" colspan="2">
+           <widget class="QLineEdit" name="downloadLineEdit"/>
+          </item>
+         </layout>
+        </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="label_2">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>Format:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <widget class="QComboBox" name="downloadComboFormat">
           <property name="enabled">
            <bool>false</bool>
           </property>
@@ -198,30 +261,8 @@ padding: 10px;
           </property>
          </widget>
         </item>
-        <item row="2" column="0" colspan="5">
-         <widget class="QLineEdit" name="downloadLineEdit"/>
-        </item>
-        <item row="0" column="0" colspan="5">
-         <widget class="QLabel" name="downloadInfoBox">
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>48</height>
-           </size>
-          </property>
-          <property name="text">
-           <string>Please enter the link to the video you want to download in the field below.</string>
-          </property>
-          <property name="textFormat">
-           <enum>Qt::RichText</enum>
-          </property>
-          <property name="wordWrap">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="1">
-         <widget class="QComboBox" name="downloadComboFormat">
+        <item row="4" column="3">
+         <widget class="QComboBox" name="downloadComboQuality">
           <property name="enabled">
            <bool>false</bool>
           </property>
@@ -239,19 +280,13 @@ padding: 10px;
           </property>
          </widget>
         </item>
-        <item row="4" column="0">
-         <widget class="QLabel" name="label_2">
+        <item row="4" column="4">
+         <widget class="QPushButton" name="downloadStart">
           <property name="enabled">
            <bool>false</bool>
           </property>
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
           <property name="text">
-           <string>Format:</string>
+           <string>Grab this clip!</string>
           </property>
          </widget>
         </item>
@@ -758,20 +793,6 @@ padding: 10px;
                 <string>Other</string>
                </attribute>
                <layout class="QGridLayout" name="gridLayout_14">
-                <item row="7" column="0">
-                 <widget class="QCheckBox" name="settingsUseWebM">
-                  <property name="text">
-                   <string>Use WebM if possible</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="5" column="0" colspan="2">
-                 <widget class="QCheckBox" name="settingsRemoveFinishedDownloads">
-                  <property name="text">
-                   <string>Remove finished downloads from list</string>
-                  </property>
-                 </widget>
-                </item>
                 <item row="6" column="0">
                  <widget class="QCheckBox" name="settingsMinimizeToTray">
                   <property name="text">
@@ -779,31 +800,10 @@ padding: 10px;
                   </property>
                  </widget>
                 </item>
-                <item row="4" column="0">
-                 <widget class="QCheckBox" name="settingsRememberVideoQuality">
+                <item row="5" column="0" colspan="2">
+                 <widget class="QCheckBox" name="settingsRemoveFinishedDownloads">
                   <property name="text">
-                   <string>Remember video quality</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="8" column="0">
-                 <widget class="QCheckBox" name="settingsIgnoreSSLErrors">
-                  <property name="text">
-                   <string>Ignore SSL errors</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="0">
-                 <widget class="QCheckBox" name="settingsRememberLogins">
-                  <property name="text">
-                   <string>Remember logins</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="9" column="0">
-                 <widget class="QCheckBox" name="settingsForceIpV4">
-                  <property name="text">
-                   <string>Force IPv4</string>
+                   <string>Remove finished downloads from list</string>
                   </property>
                  </widget>
                 </item>
@@ -821,14 +821,7 @@ padding: 10px;
                   </property>
                  </widget>
                 </item>
-                <item row="12" column="0">
-                 <widget class="QCheckBox" name="settingsKeepURL">
-                  <property name="text">
-                   <string>Keep Download URL</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="13" column="1">
+                <item row="12" column="1">
                  <spacer name="verticalSpacer">
                   <property name="orientation">
                    <enum>Qt::Vertical</enum>
@@ -840,6 +833,41 @@ padding: 10px;
                    </size>
                   </property>
                  </spacer>
+                </item>
+                <item row="7" column="0">
+                 <widget class="QCheckBox" name="settingsUseWebM">
+                  <property name="text">
+                   <string>Use WebM if possible</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="0">
+                 <widget class="QCheckBox" name="settingsRememberLogins">
+                  <property name="text">
+                   <string>Remember logins</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="9" column="0">
+                 <widget class="QCheckBox" name="settingsForceIpV4">
+                  <property name="text">
+                   <string>Force IPv4</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="4" column="0">
+                 <widget class="QCheckBox" name="settingsRememberVideoQuality">
+                  <property name="text">
+                   <string>Remember video quality</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="8" column="0">
+                 <widget class="QCheckBox" name="settingsIgnoreSSLErrors">
+                  <property name="text">
+                   <string>Ignore SSL errors</string>
+                  </property>
+                 </widget>
                 </item>
                </layout>
               </widget>
@@ -1284,7 +1312,7 @@ ClipGrab is already available in many languages. If ClipGrab has not been transl
      <x>0</x>
      <y>0</y>
      <width>917</width>
-     <height>23</height>
+     <height>19</height>
     </rect>
    </property>
   </widget>
@@ -1298,7 +1326,6 @@ ClipGrab is already available in many languages. If ClipGrab has not been transl
   <tabstop>downloadTree</tabstop>
   <tabstop>downloadCancel</tabstop>
   <tabstop>downloadOpen</tabstop>
-  <tabstop>searchLineEdit</tabstop>
   <tabstop>scrollArea</tabstop>
   <tabstop>comboBox</tabstop>
   <tabstop>pushButton</tabstop>

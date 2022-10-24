@@ -77,6 +77,10 @@ void MainWindow::init()
     });
     connect(cg, &ClipGrab::currentVideoStateChanged, this, &MainWindow::handleCurrentVideoStateChanged);
 
+    connect(ui.copy_from_clip, &QPushButton::clicked, [=]() {
+        ui.downloadLineEdit->setText( ui.clipboard_content->text() );
+    });
+
     connect(ui.downloadTree->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &MainWindow::handle_downloadTree_currentChanged);
     ui.downloadTree->header()->setStretchLastSection(false);
     ui.downloadTree->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
@@ -170,7 +174,6 @@ void MainWindow::init()
       ui.settingsForceIpV4->setChecked(cg->settings.value("forceIpV4", false).toBool());
       ui.settingsUpdateCheck->setChecked(cg->settings.value("Check-Updates", true).toBool());
       ui.settingsShowLogo->setChecked(cg->settings.value("Show-Logo", true).toBool());
-      ui.settingsKeepURL->setChecked(cg->settings.value("Keep-URL", false).toBool());
 
 
     int langIndex = 0;
@@ -272,6 +275,8 @@ void MainWindow::init()
         ui.label_4->hide();
         ui.verticalSpacer_9->changeSize(10, 0);
     }
+
+    cg->clipboardChanged();
 }
 
 void MainWindow::hide_logo() {
@@ -339,11 +344,8 @@ void MainWindow::targetFileSelected(video* video, QString target)
     video->setTargetFilename(target);
     cg->enqueueDownload(video);
 
-    bool keep_url = cg->settings.value("Keep-URL", false).toBool();
-    if (!keep_url) {
-        ui.downloadLineEdit->clear();
-        cg->clearCurrentVideo();
-    }
+    ui.downloadLineEdit->clear();
+    cg->clearCurrentVideo();
 }
 
 void MainWindow::handleCurrentVideoStateChanged(video* video) {
@@ -446,6 +448,8 @@ void MainWindow::on_settingsSaveLastPath_stateChanged(int state)
 }
 
 void MainWindow::compatibleUrlFoundInClipBoard(QString url) {
+    this->ui.clipboard_content->setText(url);
+    this->ui.copy_from_clip->setEnabled(true);
     if (QApplication::activeModalWidget() == nullptr) {
         if (cg->settings.value("Clipboard", "ask") == "ask") {
             Notifications::showMessage(tr("ClipGrab: Video discovered in your clipboard"), tr("ClipGrab has discovered the address of a compatible video in your clipboard. Click on this message to download it now."), &systemTrayIcon);
@@ -842,8 +846,3 @@ void MainWindow::on_settingsShowLogo_toggled(bool checked) {
         ui.verticalSpacer_9->changeSize(10, 0);
     }
 }
-
-void MainWindow::on_settingsKeepURL_toggled(bool checked) {
-    cg->settings.setValue("Keep-URL", checked);
-}
-

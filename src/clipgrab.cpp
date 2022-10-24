@@ -698,12 +698,10 @@ void ClipGrab::cancelAllDownloads() {
 }
 
 void ClipGrab::clipboardChanged() {
-    if (settings.value("Clipboard", "ask").toString() != "never") {
-        QString url = QApplication::clipboard()->text();
-        if (isKnownVideoUrl(url)) {
-            this->clipboardUrl = url;
-            emit compatibleUrlFoundInClipboard(url);
-        }
+    QString url = QApplication::clipboard()->text();
+    if (isKnownVideoUrl(url)) {
+        this->clipboardUrl = url;
+        emit compatibleUrlFoundInClipboard(url);
     }
 }
 

@@ -146,7 +146,6 @@ private slots:
     void on_settingsForceIpV4_toggled(bool checked);
     void on_settingsUpdateCheck_toggled(bool checked);
     void on_settingsShowLogo_toggled(bool checked);
-    void on_settingsKeepURL_toggled(bool checked);
 };
 
 #endif // MAINWINDOW_H
