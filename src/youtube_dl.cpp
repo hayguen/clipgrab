@@ -3,6 +3,7 @@
 #if USE_YTDLP
 // A youtube-dl fork with additional features and fixes
 // see https://github.com/yt-dlp/yt-dlp
+const char * YoutubeDl::python = "python3";
 const char * YoutubeDl::executable = "yt-dlp";
 const char * YoutubeDl::homepage_url = "https://github.com/yt-dlp/yt-dlp";
 const char * YoutubeDl::homepage_short = "github.com/yt-dlp/yt-dlp";
@@ -20,6 +21,7 @@ const char * YoutubeDl::download_url = "https://github.com/yt-dlp/yt-dlp/release
 #else
 // (probably) the origin of youtube-dl
 // see https://yt-dl.org
+const char * YoutubeDl::python = "python";
 const char * YoutubeDl::executable = "youtube-dl";
 const char * YoutubeDl::download_url = "https://yt-dl.org/downloads/latest/youtube-dl";
 const char * YoutubeDl::homepage_url = "https://youtube-dl.org";
@@ -33,38 +35,38 @@ YoutubeDl::YoutubeDl()
 
 }
 
-QString YoutubeDl::path = QString();
+QString YoutubeDl::yt_dn_path = QString();
 
 QString YoutubeDl::find(bool force) {
-    if (!force && !path.isEmpty()) return path;
+    if (!force && !yt_dn_path.isEmpty()) return yt_dn_path;
 
     // Prefer downloaded youtube-dl
     QString localPath = QStandardPaths::locate(QStandardPaths::AppDataLocation, YoutubeDl::executable);
     if (!localPath.isEmpty()) {
-        QProcess* process = instance(localPath, QStringList() << "--version");
+        QProcess* process = instance(localPath, QStringList() << "--version", false);
         process->start();
         process->waitForFinished();
         process->deleteLater();
         if (process->state() != QProcess::NotRunning) process->kill();
         if (process->exitCode() == QProcess::ExitStatus::NormalExit) {
-            path = localPath;
-            qDebug() << "Found " << YoutubeDl::executable << " in AppDataLocation at " << path;
-            return path;
+            yt_dn_path = localPath;
+            qDebug() << "Found " << YoutubeDl::executable << " in AppDataLocation at " << yt_dn_path;
+            return yt_dn_path;
         }
     }
 
     // Try system-wide youtube-dl installation
     QString globalPath = QStandardPaths::findExecutable(YoutubeDl::executable);
     if (!globalPath.isEmpty()) {
-        QProcess* process = instance(globalPath, QStringList() << "--version");
+        QProcess* process = instance(globalPath, QStringList() << "--version", false);
         process->start();
         process->waitForFinished();
         process->deleteLater();
         if (process->state() != QProcess::NotRunning) process->kill();
         if (process->exitCode() == QProcess::ExitStatus::NormalExit) {
-            path = globalPath;
-            qDebug() << "Found " << YoutubeDl::executable << " executable at " << path;
-            return path;
+            yt_dn_path = globalPath;
+            qDebug() << "Found " << YoutubeDl::executable << " executable at " << yt_dn_path;
+            return yt_dn_path;
         }
     }
 
@@ -73,10 +75,10 @@ QString YoutubeDl::find(bool force) {
 }
 
 QProcess* YoutubeDl::instance(QStringList arguments) {
-    return instance(find(), arguments);
+    return instance(find(), arguments, true);
 }
 
-QProcess* YoutubeDl::instance(QString path, QStringList arguments) {
+QProcess* YoutubeDl::instance(QString python_program, QStringList arguments, bool addNetworkArgs) {
     QProcess *process = new QProcess();
 
     QString execPath = QCoreApplication::applicationDirPath();
@@ -84,39 +86,65 @@ QProcess* YoutubeDl::instance(QString path, QStringList arguments) {
     env.insert("PATH", execPath + ":" + env.value("PATH"));
     process->setEnvironment(env.toStringList());
 
-    #if defined Q_OS_WIN
-        process->setProgram(execPath + "/python/python.exe");
-    #else
-        process->setProgram(QStandardPaths::findExecutable("python"));
-    #endif
-
-    QSettings settings;
-    QStringList proxyArguments;
-    if (settings.value("UseProxy", false).toBool()) {
-        QUrl proxyUrl;
-
-        proxyUrl.setHost(settings.value("ProxyHost", "").toString());
-        proxyUrl.setPort(settings.value("ProxyPort", "").toInt());
-
-        if (settings.value("ProxyType", false).toInt() == 0) {
-            proxyUrl.setScheme("http");
-        } else {
-            proxyUrl.setScheme("socks5");
+    bool add_pyprog_arg = true;
+#if defined Q_OS_WIN
+    process->setProgram(execPath + "/python/python.exe");
+#else
+    if ( !python_program.isEmpty() ) {
+        QFileDevice::Permissions perm = QFile(python_program).permissions() | QFile::ExeUser | QFile::ExeGroup | QFile::ExeOther;
+        QFile::setPermissions(python_program, perm);
+        perm = QFile(python_program).permissions();
+        if ( !( perm & (QFile::ExeGroup | QFile::ExeOther | QFile::ExeUser) ) ) {
+            process->setProgram(python_program);
+            add_pyprog_arg = false;
         }
-        if (settings.value("ProxyAuthenticationRequired", false).toBool() == true) {
-            proxyUrl.setUserName(settings.value("ProxyUsername", "").toString());
-            proxyUrl.setPassword(settings.value("ProxyPassword").toString());
+    }
+    if ( add_pyprog_arg )
+        process->setProgram(QStandardPaths::findExecutable(YoutubeDl::python));
+#endif
+
+    QStringList args;
+    if ( add_pyprog_arg )
+        args << python_program;
+
+    args << arguments;
+
+    if ( addNetworkArgs ) {
+        QSettings settings;
+        if (settings.value("UseProxy", false).toBool()) {
+            QUrl proxyUrl;
+
+            proxyUrl.setHost(settings.value("ProxyHost", "").toString());
+            proxyUrl.setPort(settings.value("ProxyPort", "").toInt());
+
+            if (settings.value("ProxyType", false).toInt() == 0) {
+                proxyUrl.setScheme("http");
+            } else {
+                proxyUrl.setScheme("socks5");
+            }
+            if (settings.value("ProxyAuthenticationRequired", false).toBool() == true) {
+                proxyUrl.setUserName(settings.value("ProxyUsername", "").toString());
+                proxyUrl.setPassword(settings.value("ProxyPassword").toString());
+            }
+
+            args << "--proxy" << proxyUrl.toString();
         }
 
-        proxyArguments << "--proxy" << proxyUrl.toString();
+        if (settings.value("forceIpV4", false).toBool()) {
+            args << "--force-ipv4";
+        }
     }
 
-    QStringList networkArguments;
-    if (settings.value("forceIpV4", false).toBool()) {
-        networkArguments << "--force-ipv4";
-    }
+    while ( args.length() && args[0].isEmpty() )
+        args.removeAt(0);  // python doesn't like empty argument "" before "--version" !
 
-    process->setArguments(QStringList() << path << arguments << proxyArguments << networkArguments);
+    process->setArguments(args);
+#if 0
+    if ( !add_pyprog_arg )
+        qDebug() << "starting " << python_program << " without interpreter: " << process->arguments();
+    else
+        qDebug() << "starting " << python_program << " with " << process->program() << " interpreter: " << process->arguments();
+#endif
     return process;
 }
 
@@ -126,22 +154,26 @@ QString YoutubeDl::getVersion() {
     youtubeDl->waitForFinished(10000);
     QString version = youtubeDl->readAllStandardOutput() + youtubeDl->readAllStandardError();
     youtubeDl->deleteLater();
-    return version.replace("\n", "");
+    QString ret = version.replace("\n", "");
+    // qDebug() << "getVersion() -> " << ret;
+    return ret;
 }
 
 QString YoutubeDl::getPythonVersion() {
-    QProcess* youtubeDl = instance(QStringList());
-    youtubeDl->setArguments(QStringList("--version"));
+    QProcess* youtubeDl = instance("", QStringList("--version"), false);
     youtubeDl->start();
     youtubeDl->waitForFinished(10000);
     QString version = youtubeDl->readAllStandardOutput() + youtubeDl->readAllStandardError();
     youtubeDl->deleteLater();
-    return version.replace("\n", "");
+    QString ret = version.replace("\n", "");
+    // qDebug() << "getPythonVersion() -> " << ret;
+    return ret;
 }
 
 QString YoutubeDl::findPython() {
-    QProcess* youtubeDl = instance(QStringList());
+    QProcess* youtubeDl = instance("", QStringList("--version"), false);
     QString program = youtubeDl->program();
     youtubeDl->deleteLater();
+    // qDebug() << "findPython() -> " << program;
     return program;
 }

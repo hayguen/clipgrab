@@ -14,14 +14,18 @@ public:
     static const char * homepage_url;
     static const char * homepage_short;
 
-    static QProcess* instance(QStringList arguments);
-    static QProcess* instance(QString path, QStringList arguments);
+    static QString find(bool force = false);  // find the YouTube Downloader
     static QString getVersion();
-    static QString getPythonVersion();
-    static QString find(bool force = false);
-    static QString findPython();
+    static QProcess* instance(QStringList arguments);
 
-    static QString path;
+    static QString findPython();
+    static QString getPythonVersion();
+
+private:
+    static QProcess* instance(QString python_program, QStringList arguments, bool addNetworkArgs);
+
+    static QString yt_dn_path;
+    static const char * python;
 };
 
 #endif // YOUTUBEDL_H

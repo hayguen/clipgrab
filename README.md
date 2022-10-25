@@ -74,14 +74,14 @@ https://download.qt.io/archive/qt/5.12/
 or here:
 https://www.qt.io/offline-installers
 
-In addition, `ffmpeg` (no developer libs necessary) and `python` needs to be installed. Ubuntu 20.04 also requires `python-is-python3`:
+In addition, `ffmpeg` (no developer libs necessary) and `python3` (for yt-dlp) needs to be installed:
 ```sh
-sudo apt install ffmpeg python-is-python3
+sudo apt install ffmpeg python3
 ```
 
 To install all prerequisites:
 ```sh
-sudo apt install qtbase5-dev qtwebengine5-dev qttools5-dev-tools ffmpeg python3 python-is-python3
+sudo apt install qtbase5-dev qtwebengine5-dev qttools5-dev-tools ffmpeg python3
 ```
 
 
