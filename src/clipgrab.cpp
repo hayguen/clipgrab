@@ -292,7 +292,49 @@ void ClipGrab::getUpdateInfo()
     QNetworkAccessManager* updateInfoNAM = new QNetworkAccessManager;
     qDebug() << "requesting update info from " << updateInfoRequestUrl.toString();
     updateInfoNAM->get(updateInfoRequest);
-    connect(updateInfoNAM, SIGNAL(finished(QNetworkReply*)), this, SLOT(parseUpdateInfo(QNetworkReply*)));
+    connect(updateInfoNAM, &QNetworkAccessManager::finished, this, &ClipGrab::parseUpdateInfo);
+}
+
+void ClipGrab::getYtDlVersion()
+{
+    QUrlQuery updateInfoRequestUrlQuery;
+    QUrl updateInfoRequestUrl(YoutubeDl::version_url);
+    updateInfoRequestUrl.setQuery(updateInfoRequestUrlQuery);
+
+    QNetworkRequest updateInfoRequest;
+    updateInfoRequest.setUrl(updateInfoRequestUrl);
+    QNetworkAccessManager* updateInfoNAM = new QNetworkAccessManager;
+    qDebug() << "requesting update info from " << updateInfoRequestUrl.toString();
+    updateInfoNAM->get(updateInfoRequest);
+    connect(updateInfoNAM, &QNetworkAccessManager::finished, this, &ClipGrab::parseYtDlVersion);
+}
+
+void ClipGrab::parseYtDlVersion(QNetworkReply* reply)
+{
+    if (!reply->bytesAvailable())
+    {
+        qDebug() << "Could not reach update server B";
+        emit updateYtDlVersion(QString::null);
+        return;
+    }
+
+    QStringList lines = QString(reply->readAll()).split("\n");
+    for (int i = 0; i < lines.size(); ++i)
+    {
+        if ( lines.at(i).contains("__version__"))
+        {
+            QString line = lines.at(i).trimmed();
+            QRegExp rx( "__version__\\s*=\\s*['\"](\\S+)['\"]");
+            int r = rx.indexIn(line);
+            int cc = rx.captureCount();
+            if (r < 0 || cc != 1)
+                continue;
+            QString v = rx.cap(1);
+            emit updateYtDlVersion(v);
+            return;
+        }
+    }
+    emit updateYtDlVersion(QString::null);
 }
 
 void ClipGrab::parseUpdateInfo(QNetworkReply* reply)

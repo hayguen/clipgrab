@@ -10,6 +10,7 @@ public:
     YoutubeDl();
 
     static const char * executable;
+    static const char * version_url;   // check for line: __version__ = '2022.10.04'
     static const char * download_url;
     static const char * homepage_url;
     static const char * homepage_short;

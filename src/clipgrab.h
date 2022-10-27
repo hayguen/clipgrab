@@ -136,6 +136,7 @@ class ClipGrab : public QObject
     QPair<qint64, qint64> getDownloadProgress();
 
     void getUpdateInfo();
+    void getYtDlVersion();
 
     void downloadYoutubeDl(bool force = false);
     void updateYoutubeDl();
@@ -162,10 +163,13 @@ class ClipGrab : public QObject
         QString youtubeDlPath;
         QProcess *youtubeDlUpdateProcess;
 
+    private slots:
+        void parseUpdateInfo(QNetworkReply* reply);
+        void parseYtDlVersion(QNetworkReply* reply);
+
     public slots:
         void errorHandler(QString);
         void errorHandler(QString, video*);
-        void parseUpdateInfo(QNetworkReply* reply);
 
         void fetchVideoInfo(const QString & url);
         void clearCurrentVideo();
@@ -190,6 +194,7 @@ class ClipGrab : public QObject
         void compatibleUrlFoundInClipboard(QString url);
         void allDownloadsCanceled();
         void updateInfoProcessed();
+        void updateYtDlVersion(QString version);
 };
 
 #endif // CLIPGRAB_H

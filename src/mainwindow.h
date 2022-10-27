@@ -105,6 +105,7 @@ private:
      void dropEvent(QDropEvent *event);
      bool updatingComboQuality;
      void updateYoutubeDlVersionInfo();
+     void handleYtDlVersion(QString version);
 
 private slots:
     void handleCurrentVideoStateChanged(video*);

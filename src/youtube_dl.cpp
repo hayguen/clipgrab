@@ -8,6 +8,7 @@ const char * YoutubeDl::executable = "yt-dlp";
 const char * YoutubeDl::homepage_url = "https://github.com/yt-dlp/yt-dlp";
 const char * YoutubeDl::homepage_short = "github.com/yt-dlp/yt-dlp";
 
+const char * YoutubeDl::version_url = "https://raw.githubusercontent.com/yt-dlp/yt-dlp/master/yt_dlp/version.py";
 #if defined(Q_OS_LINUX)
 const char * YoutubeDl::download_url = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp";
 #elif defined(Q_OS_WIN)
@@ -23,6 +24,7 @@ const char * YoutubeDl::download_url = "https://github.com/yt-dlp/yt-dlp/release
 // see https://yt-dl.org
 const char * YoutubeDl::python = "python";
 const char * YoutubeDl::executable = "youtube-dl";
+const char * YoutubeDl::version_url = "https://raw.githubusercontent.com/ytdl-org/youtube-dl/master/youtube_dl/version.py";
 const char * YoutubeDl::download_url = "https://yt-dl.org/downloads/latest/youtube-dl";
 const char * YoutubeDl::homepage_url = "https://youtube-dl.org";
 const char * YoutubeDl::homepage_short = "youtube-dl.org";

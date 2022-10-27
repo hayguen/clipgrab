@@ -276,7 +276,11 @@ void MainWindow::init()
         ui.verticalSpacer_9->changeSize(10, 0);
     }
 
-    cg->clipboardChanged();
+    QObject::connect(cg, &ClipGrab::updateYtDlVersion, this, &MainWindow::handleYtDlVersion );
+    QTimer::singleShot(300, [=] {
+        cg->clipboardChanged();
+        this->cg->getYtDlVersion();
+    });
 }
 
 void MainWindow::hide_logo() {
@@ -778,18 +782,26 @@ void MainWindow::dropEvent(QDropEvent *event)
     ui.mainTab->setCurrentIndex(0);
 }
 
-void MainWindow::updateYoutubeDlVersionInfo() {
+void MainWindow::updateYoutubeDlVersionInfo()
+{
+    handleYtDlVersion(QString::null);
+}
+
+void MainWindow::handleYtDlVersion(QString online_version) {
+    if (online_version.isEmpty())
+        online_version = tr("not available");
+    qDebug() << "MainWindow received online version: " << online_version;
+
     QString youtubeDlVersion = YoutubeDl::getVersion();
     QString pythonVersion = YoutubeDl::getPythonVersion();
     QString youtubeDlPath = YoutubeDl::find();
     QString pythonPath = YoutubeDl::findPython();
-    QString label = tr("youtube-dl: %1 (%2)\nPython: %3 (%4)")
-            .arg(youtubeDlPath)
-            .arg(youtubeDlVersion)
-            .arg(pythonPath)
-            .arg(pythonVersion);
+    QString label = tr("<h2>Versions</h2>\nyoutube-dl: %1 (%2)<br>youtube-dl at <a href=\"%5\">%6</a> (%7)<br>Python: %3 (%4)")
+                        .arg(youtubeDlPath, youtubeDlVersion, pythonPath, pythonVersion)
+                        .arg(YoutubeDl::homepage_url, YoutubeDl::homepage_short)
+                        .arg(online_version);
     ui.labelYoutubeDlVersionInfo->setText(label);
-};
+}
 
 void MainWindow::on_settingsRememberLogins_toggled(bool /*checked*/)
 {
