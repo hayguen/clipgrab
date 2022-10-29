@@ -276,7 +276,31 @@ void MainWindow::init()
         ui.verticalSpacer_9->changeSize(10, 0);
     }
 
+
+    this->ui.yt_version_check->setEnabled(false);
+    this->ui.yt_update->setText(tr("Update"));
+    this->ui.yt_update->setEnabled(true);
+
     QObject::connect(cg, &ClipGrab::updateYtDlVersion, this, &MainWindow::handleYtDlVersion );
+
+    connect(this->ui.yt_version_check, &QPushButton::clicked, [=]() {
+        this->ui.yt_version_check->setEnabled(false);
+        this->cg->getYtDlVersion();
+    });
+    connect(this->ui.yt_update, &QPushButton::clicked, [=]() {
+        this->cg->startYoutubeDlDownload();
+    });
+    connect(this->ui.yt_delete, &QPushButton::clicked, [=]() {
+        QString youtubeDlPath = YoutubeDl::find();
+        QFile::remove(youtubeDlPath);
+        this->cg->getYtDlVersion();
+    });
+
+    QObject::connect(cg, &ClipGrab::youtubeDlDownloadFinished, this, [=]() {
+        this->ui.yt_version_check->setEnabled(false);
+        this->cg->getYtDlVersion();
+    });
+
     QTimer::singleShot(300, [=] {
         cg->clipboardChanged();
         this->cg->getYtDlVersion();
@@ -800,7 +824,18 @@ void MainWindow::handleYtDlVersion(QString online_version) {
                         .arg(youtubeDlPath, youtubeDlVersion, pythonPath, pythonVersion)
                         .arg(YoutubeDl::homepage_url, YoutubeDl::homepage_short)
                         .arg(online_version);
+    if ( youtubeDlVersion.isEmpty() )
+        label = tr("<h2>Versions</h2>\nyoutube-dl: <b>not found!</b><br>youtube-dl at <a href=\"%3\">%4</a> (%7)<br>Python: %1 (%2)")
+                    .arg(pythonPath, pythonVersion)
+                    .arg(YoutubeDl::homepage_url, YoutubeDl::homepage_short)
+                    .arg(online_version);
     ui.labelYoutubeDlVersionInfo->setText(label);
+
+    ui.yt_version_check->setEnabled(true);
+    bool normal_update = (youtubeDlVersion.isEmpty() || youtubeDlVersion < online_version );
+    ui.yt_update->setText(normal_update ? tr("Update") : tr("Force Update!"));
+    ui.yt_update->setEnabled(true);
+    ui.yt_delete->setEnabled(!youtubeDlVersion.isEmpty());
 }
 
 void MainWindow::on_settingsRememberLogins_toggled(bool /*checked*/)

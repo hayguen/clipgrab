@@ -142,6 +142,7 @@ class ClipGrab : public QObject
     void updateYoutubeDl();
     QProcess* runYouTubeDl(QStringList);
     void startYoutubeDlDownload();
+    void showDownloaderDlg();
 
     void clearTempFiles();
 

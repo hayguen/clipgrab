@@ -608,20 +608,34 @@ void ClipGrab::downloadYoutubeDl(bool force) {
     }
     if (QSettings().value("disableYoutubeDlDownload", false).toBool()) return;
 
-    this->helperDownloaderDialog = new QDialog(QApplication::activeWindow());
-    this->helperDownloaderUi = new Ui::HelperDownloader();
-    this->helperDownloaderUi->setupUi(this->helperDownloaderDialog);
-
-    connect(this->helperDownloaderUi->exitButton, &QPushButton::clicked, this->helperDownloaderDialog, &QDialog::reject);
-    connect(this->helperDownloaderUi->continueButton, &QPushButton::clicked, this, &ClipGrab::startYoutubeDlDownload);
-
+    showDownloaderDlg();
     if (this->helperDownloaderDialog->exec() != QDialog::Accepted) {
         QApplication::quit();
         QApplication::exit();
     }
 }
 
-void ClipGrab::startYoutubeDlDownload() {
+void ClipGrab::showDownloaderDlg()
+{
+    if ( !this->helperDownloaderDialog )
+    {
+        this->helperDownloaderDialog = new QDialog(QApplication::activeWindow());
+        this->helperDownloaderUi = new Ui::HelperDownloader();
+        this->helperDownloaderUi->setupUi(this->helperDownloaderDialog);
+
+        connect(this->helperDownloaderUi->exitButton, &QPushButton::clicked, this->helperDownloaderDialog, &QDialog::reject);
+        connect(this->helperDownloaderUi->continueButton, &QPushButton::clicked, this, &ClipGrab::startYoutubeDlDownload);
+    }
+    this->helperDownloaderDialog->show();
+}
+
+
+void ClipGrab::startYoutubeDlDownload()
+{
+    if ( !this->helperDownloaderDialog ) {
+        showDownloaderDlg();
+    }
+
     this->helperDownloaderDialog->setDisabled(true);
 
     QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);

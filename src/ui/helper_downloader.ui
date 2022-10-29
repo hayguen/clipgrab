@@ -148,7 +148,7 @@ font-size: 18px;</string>
             </size>
            </property>
            <property name="pixmap">
-            <pixmap resource="resources.qrc">:/img/icon.png</pixmap>
+            <pixmap resource="../../resources.qrc">:/img/icon.png</pixmap>
            </property>
            <property name="scaledContents">
             <bool>true</bool>
@@ -180,7 +180,7 @@ font-size: 18px;</string>
   </layout>
  </widget>
  <resources>
-  <include location="resources.qrc"/>
+  <include location="../../resources.qrc"/>
  </resources>
  <connections/>
 </ui>
