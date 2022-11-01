@@ -58,6 +58,13 @@ Q_OBJECT
 public:
     converter_ffmpeg();
 
+    static const char * name;
+    static const char * executable;
+    static const char * homepage_url;
+    static const char * homepage_short;
+    static const char * releases;
+
+
     converter* createNewInstance();
     void startConversion(
         QFile* file,
@@ -75,9 +82,12 @@ public:
     bool isAudioOnly(int mode) const;
     bool isMono(int /*mode*/) const;
     bool hasMetaInfo(int /*mode*/) const;
-    ffmpegThread ffmpeg;
 
 private:
+    void parseVersion(QString path, QString output);
+
+    ffmpegThread ffmpeg;
+
     enum Mode {
         mode_mp4 = 0,
         mode_wmv,
@@ -88,6 +98,9 @@ private:
         mode_pcm,
         mode_pcm_mono
     };
+
+signals:
+    void ffmpegPathAndVersion(QString path, QString version);
 
 public slots:
     void emitFinished();

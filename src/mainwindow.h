@@ -96,6 +96,9 @@ private:
      QShortcut * formatShortcutB;
      QShortcut * qualityShortcutA;
      QShortcut * qualityShortcutB;
+     QProcess  * ffmpegUnpackProcess;
+     QString     ffmpegDownloadedArchive;
+
      void disableDownloadUi(bool disable=true);
      void disableDownloadTreeButtons(bool disable=true);
      void closeEvent(QCloseEvent* event);
@@ -106,9 +109,15 @@ private:
      bool updatingComboQuality;
      void updateYoutubeDlVersionInfo();
      void handleYtDlVersion(QString version);
+     void handleFFmpegVersion(QString path, QString version, QStringList releases);
+     void handleFFmpegDelete();
+     void updateAvailableFormats();
 
 private slots:
     void handleCurrentVideoStateChanged(video*);
+    void handleFFmpegReleases(QStringList releases);
+    void handleFFmpegDownloadFinished(QString filePath);
+    void handleFFmpegUnpackFinished(int exitCode, QProcess::ExitStatus exitStatus);
 
     void on_mainTab_currentChanged(int index);
     void on_downloadComboFormat_currentIndexChanged(int index);
@@ -147,6 +156,7 @@ private slots:
     void on_settingsForceIpV4_toggled(bool checked);
     void on_settingsUpdateCheck_toggled(bool checked);
     void on_settingsShowLogo_toggled(bool checked);
+    void on_ff_branch_currentIndexChanged(int index);
 };
 
 #endif // MAINWINDOW_H

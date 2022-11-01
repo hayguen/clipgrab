@@ -79,9 +79,14 @@ In addition, `ffmpeg` (no developer libs necessary) and `python3` (for yt-dlp) n
 sudo apt install ffmpeg python3
 ```
 
+For updating `ffmpeg` from https://github.com/BtbN/FFmpeg-Builds following packages are needed:
+```sh
+sudo apt install tar xz-utils
+```
+
 To install all prerequisites:
 ```sh
-sudo apt install qtbase5-dev qtwebengine5-dev qttools5-dev-tools ffmpeg python3
+sudo apt install qtbase5-dev qtwebengine5-dev qttools5-dev-tools ffmpeg python3 tar xz-utils
 ```
 
 

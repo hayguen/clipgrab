@@ -3,20 +3,17 @@
 
 #include <QDialog>
 
-namespace Ui {
-class HelperDownloader;
-}
+#include "ui_helper_downloader.h"
 
-class HelperDownloader : public QDialog
+
+class TypedHelperDownloader: public Ui::HelperDownloader
 {
-    Q_OBJECT
-
 public:
-    explicit HelperDownloader(QWidget *parent = nullptr);
-    ~HelperDownloader();
+    explicit TypedHelperDownloader();
+    ~TypedHelperDownloader();
 
-private:
-    Ui::HelperDownloader *ui;
+    enum DownloaderType { YTDL, FFMPEG };
+    void setDialogType(DownloaderType type);
 };
 
-#endif // HELPER_DOWNLOAD_H
+#endif

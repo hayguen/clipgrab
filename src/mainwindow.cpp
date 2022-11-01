@@ -26,6 +26,7 @@
 MainWindow::MainWindow(ClipGrab* cg, QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags)
 {
+    this->ffmpegUnpackProcess = NULL;
     this->cg = cg;
     ui.setupUi(this);
 }
@@ -90,13 +91,7 @@ void MainWindow::init()
     ui.downloadTree->header()->setSectionResizeMode(4, QHeaderView::ResizeToContents);
     ui.downloadLineEdit->setFocus(Qt::OtherFocusReason);
 
-    int lastFormat = cg->settings.value("LastFormat", 0).toInt();
-    for (int i = 0; i < this->cg->formats.size(); ++i)
-    {
-        this->ui.downloadComboFormat->addItem(this->cg->formats.at(i)._name);
-    }
-
-    this->ui.downloadComboFormat->setCurrentIndex(lastFormat);
+    updateAvailableFormats();
 
     //*
     //* Settings Tab
@@ -301,10 +296,48 @@ void MainWindow::init()
         this->cg->getYtDlVersion();
     });
 
+
+    QObject::connect(cg, &ClipGrab::updateFFmpegVersions, this, &MainWindow::handleFFmpegReleases );
+    QObject::connect(cg, &ClipGrab::FFmpegDownloadFinished, this, &MainWindow::handleFFmpegDownloadFinished );
+
+    connect(this->ui.ff_version_check, &QPushButton::clicked, [=]() {
+        this->cg->updateFFmpeg();
+        this->updateAvailableFormats();
+        this->ui.ff_version_check->setEnabled(false);
+        this->cg->getFFmpegReleases();
+    });
+    connect(this->ui.ff_update, &QPushButton::clicked, [=]() {
+        QString branch = ui.ff_branch->currentText();
+        QString url = ui.ff_branch->currentData().toString();
+        qDebug() << "update FFmpeg branch " << branch << " from URL " << url;
+        cg->startFFmpegDownload(url);
+    });
+    connect(this->ui.ff_delete, &QPushButton::clicked, this, &MainWindow::handleFFmpegDelete);
+
     QTimer::singleShot(300, [=] {
         cg->clipboardChanged();
         this->cg->getYtDlVersion();
+        this->handleFFmpegVersion( this->cg->ffmpegPath(), this->cg->ffmpegVersion(), QStringList() );
+        this->cg->getFFmpegReleases();
     });
+}
+
+void MainWindow::handleFFmpegDelete() {
+    QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    if ( QFile::exists(dir+"/ffmpeg") )
+        QFile::remove(dir+"/ffmpeg");
+    cg->updateFFmpeg();
+    updateAvailableFormats();
+    cg->getFFmpegReleases();
+}
+
+void MainWindow::updateAvailableFormats() {
+    int lastFormat = cg->settings.value("LastFormat", 0).toInt();
+    ui.downloadComboFormat->clear();
+    for (int i = 0; i < cg->formats.size(); ++i) {
+        ui.downloadComboFormat->addItem(cg->formats.at(i)._name);
+    }
+    this->ui.downloadComboFormat->setCurrentIndex(lastFormat);
 }
 
 void MainWindow::hide_logo() {
@@ -820,7 +853,7 @@ void MainWindow::handleYtDlVersion(QString online_version) {
     QString pythonVersion = YoutubeDl::getPythonVersion();
     QString youtubeDlPath = YoutubeDl::find();
     QString pythonPath = YoutubeDl::findPython();
-    QString label = tr("<h2>Versions</h2>\nyoutube-dl: %1 (%2)<br>youtube-dl at <a href=\"%5\">%6</a> (%7)<br>Python: %3 (%4)")
+    QString label = tr("<h2>YouTube Downloader</h2>\nyoutube-dl: %1 (%2)<br>youtube-dl at <a href=\"%5\">%6</a> (%7)<br>Python: %3 (%4)")
                         .arg(youtubeDlPath, youtubeDlVersion, pythonPath, pythonVersion)
                         .arg(YoutubeDl::homepage_url, YoutubeDl::homepage_short)
                         .arg(online_version);
@@ -837,6 +870,96 @@ void MainWindow::handleYtDlVersion(QString online_version) {
     ui.yt_update->setEnabled(true);
     ui.yt_delete->setEnabled(!youtubeDlVersion.isEmpty());
 }
+
+void MainWindow::handleFFmpegReleases(QStringList releases)
+{
+    handleFFmpegVersion(cg->ffmpegPath(), cg->ffmpegVersion(), releases);
+}
+
+void MainWindow::handleFFmpegDownloadFinished(QString filePath)
+{
+    ffmpegDownloadedArchive = filePath;
+    qDebug() << "FFmpeg download finished: " << filePath;
+
+    QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    handleFFmpegDelete();
+    if ( !ffmpegUnpackProcess ) {
+        ffmpegUnpackProcess = new QProcess(this);
+        QObject::connect(ffmpegUnpackProcess, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), this, &MainWindow::handleFFmpegUnpackFinished );
+    }
+
+#if defined(Q_OS_LINUX)
+    if (!filePath.endsWith(".tar.xz")) {
+        qDebug() << "Error: expected .tar.gz!";
+        QFile::remove(filePath);
+        return;
+    }
+    // "tar -xf ffmpeg-n5.1-latest-linux64-gpl-5.1.tar.xz --no-anchored ffmpeg -C ./ --strip-components 2"
+    ffmpegUnpackProcess->setWorkingDirectory(dir);
+    ffmpegUnpackProcess->setProgram("tar");
+    ffmpegUnpackProcess->setArguments(
+        QStringList()
+        << "-xvf"
+        << filePath
+        << "--no-anchored"
+        << "ffmpeg"
+        << "-C"
+        << dir
+        << "--strip-components"
+        << "2"
+        );
+//#elif defined(Q_OS_WIN)
+// #elif defined(Q_OS_MAC)
+#else
+    qDebug() << "Error: Unpacking not implemented on this platform!";
+    QFile::remove(filePath);
+    return;
+#endif
+    ffmpegUnpackProcess->start();
+}
+
+void MainWindow::handleFFmpegUnpackFinished(int exitCode, QProcess::ExitStatus exitStatus)
+{
+    (void)exitStatus;
+    qDebug() << "FFmpeg unpacking finished with exitCode " << exitCode;
+    if (ffmpegDownloadedArchive.isEmpty() || !QFile::exists(ffmpegDownloadedArchive)) {
+        qDebug() << "FFmpeg archive not found!";
+        return;
+    }
+    cg->updateFFmpeg();
+    updateAvailableFormats();
+    cg->getFFmpegReleases();
+    QFile::remove(ffmpegDownloadedArchive);
+    ffmpegDownloadedArchive.clear();
+}
+
+void MainWindow::handleFFmpegVersion(QString path, QString version, QStringList releases)
+{
+    if (version.isEmpty())
+        version = tr("not available");
+    QString label = tr("<h2>A/V Converter</h2>\nFFmpeg: %1 (%2)").arg(path, version);
+    if ( path.isEmpty() )
+        label = tr("<h2>A/V Converter</h2>\nFFmpeg: <b>not found!</b>");
+    label = label + "<br>"
+            + tr("FFmpeg at <a href=\"%1\">%2</a> (daily builds)")
+                  .arg(converter_ffmpeg::homepage_url, converter_ffmpeg::homepage_short);
+    ui.labelFFmpegVersionInfo->setText(label);
+
+    {
+        const QString old_sel = cg->settings.value("FFmpeg_Update_Branch", QString("master")).toString();
+        int next_idx = -1;
+        ui.ff_branch->clear();
+        for (int k = 0; k < releases.size(); k += 2) {
+            ui.ff_branch->addItem(releases.at(k), releases.at(k+1));
+            if ( old_sel == releases.at(k) )
+                next_idx = ui.ff_branch->count() - 1;
+        }
+        ui.ff_branch->setCurrentIndex( next_idx );
+    }
+    ui.ff_update->setText(tr("Update"));
+    ui.ff_version_check->setEnabled(true);
+}
+
 
 void MainWindow::on_settingsRememberLogins_toggled(bool /*checked*/)
 {
@@ -892,4 +1015,11 @@ void MainWindow::on_settingsShowLogo_toggled(bool checked) {
         ui.label_4->hide();
         ui.verticalSpacer_9->changeSize(10, 0);
     }
+}
+
+void MainWindow::on_ff_branch_currentIndexChanged(int index) {
+    ui.ff_update->setEnabled( index >= 0 );
+    QString branch = ui.ff_branch->currentText();
+    if ( index >= 0 && !branch.isEmpty() )
+        cg->settings.setValue("FFmpeg_Update_Branch", branch);
 }

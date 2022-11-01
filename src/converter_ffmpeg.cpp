@@ -20,8 +20,14 @@
 */
 
 
-
 #include "converter_ffmpeg.h"
+
+const char * converter_ffmpeg::name = "FFmpeg";
+const char * converter_ffmpeg::executable = "ffmpeg";
+const char * converter_ffmpeg::homepage_url = "https://github.com/BtbN/FFmpeg-Builds";
+const char * converter_ffmpeg::homepage_short = "github.com/BtbN/FFmpeg-Builds";
+const char * converter_ffmpeg::releases = "https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/latest";
+
 
 void ffmpegThread::run()
 {
@@ -422,43 +428,81 @@ bool converter_ffmpeg::isAvailable()
 
     QString ffmpegPath;
     QProcess testProcess;
+    bool found_program = false;
 
-    #ifdef Q_OS_MAC
-        ffmpegPath =  "\"" + QApplication::applicationDirPath() + "/ffmpeg\"";
-    #else
+#ifdef Q_OS_MAC
+    ffmpegPath =  "\"" + QApplication::applicationDirPath() + "/ffmpeg\"";
+#else
+    for ( int k = 0; k < 3; ++k ) {
+        if (k == 0) {
+            QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+            ffmpegPath = dir + "/" + converter_ffmpeg::executable;
+            testProcess.start(ffmpegPath + " -v quiet");
+        }
+        else if ( k == 1) {
+            ffmpegPath = QStandardPaths::findExecutable(converter_ffmpeg::executable);
+            testProcess.start(ffmpegPath + " -v quiet");
+        }
+        else {
+            ffmpegPath = QStandardPaths::findExecutable("avconv");
+            testProcess.start(ffmpegPath + " -v quiet");
+        }
 
-        testProcess.start("avconv -v quiet");
         if (testProcess.waitForFinished())
         {
-            ffmpegPath = "avconv";
+            found_program = true;
+            break;
         }
-        else
-        {
-            testProcess.start("ffmpeg -v quiet");
-            if (testProcess.waitForFinished())
-            {
-                ffmpegPath = "ffmpeg";
-            }
-            else
-            {
-                emit error(tr("No installed version of avconv or ffmpeg coud be found. Converting files and downloading 1080p videos from YouTube is not supported."));
-                settings.setValue("ffmpegPath", "");
-                return false;
-            }
-        }
-    #endif
+    }
+    if (!found_program) {
+        emit error(tr("No installed version of avconv or ffmpeg coud be found. Converting files and downloading 1080p videos from YouTube is not supported."));
+        settings.setValue("ffmpegPath", "");
+        emit ffmpegPathAndVersion(QString::null, QString::null);
+        return false;
+    }
+#endif
 
     testProcess.start(ffmpegPath + " -formats");
     testProcess.waitForFinished();
-    QString supportedFormats = testProcess.readAllStandardOutput();
+    QString outs = testProcess.readAllStandardOutput();
+    QString errs = testProcess.readAllStandardError();
 
     settings.setValue("ffmpegPath", ffmpegPath);
-    settings.setValue("DashSupported", (bool) supportedFormats.contains("hls"));
+    settings.setValue("DashSupported", (bool) outs.contains("hls"));
     if (settings.value("DashSupported", false) == false)
     {
         emit error(tr("The installed version of %1 is outdated.\nDownloading 1080p videos from YouTube is not supported.").arg(ffmpegPath));
     }
 
+    parseVersion(ffmpegPath, outs+"\n"+errs);
     return true;
+}
 
+
+void converter_ffmpeg::parseVersion(QString path, QString output)
+{
+    QStringList lines = output.split("\n");
+    const QString version("version");
+    const QString copyright("Copyright");
+    for (int i = 0; i < lines.size(); ++i)
+    {
+        if ( lines.at(i).contains(version))
+        {
+            QString line = lines.at(i).trimmed();
+            int idx_ver = line.indexOf(version);
+            if ( idx_ver >= 0 )
+                line = line.mid(idx_ver + version.length());
+            int idx_copy = line.indexOf(copyright);
+            if ( idx_copy >= 0 )
+                line = line.left(idx_copy);
+            line = line.trimmed();
+            if ( idx_ver >= 0 && idx_copy >= 0 && line.length() > 0 ) {
+                qDebug() << "ffmpeg path: " << path;
+                qDebug() << "ffmpeg version: " << line;
+                emit ffmpegPathAndVersion(path, line);
+                return;
+            }
+        }
+    }
+    emit ffmpegPathAndVersion(path, QString::null);
 }

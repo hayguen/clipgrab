@@ -21,9 +21,12 @@
 
 
 #include "clipgrab.h"
+#include "helper_downloader.h"
 
 ClipGrab::ClipGrab()
 {
+    helperDownloaderDialog = NULL;
+
     //*
     //* Set current version
     //*
@@ -185,26 +188,11 @@ ClipGrab::ClipGrab()
     //*
     //* Initialise the supported converters
     //*
+    conv_ffmpeg = new converter_ffmpeg;
     converters.append(new converter_copy);
-    converters.append(new converter_ffmpeg);
-
-    for (int i = 0; i < converters.size(); ++i)
-    {
-        converter* tmpConverter = converters.at(i);
-        connect(tmpConverter, SIGNAL(error(QString)), this, SLOT(errorHandler(QString)));
-        if (tmpConverter->isAvailable())
-        {
-            QList<QString> tmpModes = tmpConverter->getModes();
-            for (int i = 0; i < tmpModes.size(); ++i)
-            {
-                format tmpFormat;
-                tmpFormat._converter = tmpConverter;
-                tmpFormat._mode = i;
-                tmpFormat._name = tmpModes.at(i);
-                formats.append(tmpFormat);
-            }
-        }
-    }
+    converters.append(conv_ffmpeg);
+    QObject::connect(conv_ffmpeg, &converter_ffmpeg::ffmpegPathAndVersion, this, &ClipGrab::handleFFmpegPathAndVersion );
+    updateFFmpeg();
 
     //*
     //* Add Mozilla Root CA certificats to avoid errors from missing system certificates
@@ -235,6 +223,28 @@ ClipGrab::ClipGrab()
 
     currentVideo = nullptr;
     currentSearch = nullptr;
+}
+
+void ClipGrab::updateFFmpeg()
+{
+    formats.clear();
+    for (int i = 0; i < converters.size(); ++i)
+    {
+        converter* tmpConverter = converters.at(i);
+        connect(tmpConverter, SIGNAL(error(QString)), this, SLOT(errorHandler(QString)));
+        if (tmpConverter->isAvailable())
+        {
+            QList<QString> tmpModes = tmpConverter->getModes();
+            for (int i = 0; i < tmpModes.size(); ++i)
+            {
+                format tmpFormat;
+                tmpFormat._converter = tmpConverter;
+                tmpFormat._mode = i;
+                tmpFormat._name = tmpModes.at(i);
+                formats.append(tmpFormat);
+            }
+        }
+    }
 }
 
 void ClipGrab::fetchVideoInfo(const QString& url) {
@@ -309,6 +319,20 @@ void ClipGrab::getYtDlVersion()
     connect(updateInfoNAM, &QNetworkAccessManager::finished, this, &ClipGrab::parseYtDlVersion);
 }
 
+void ClipGrab::getFFmpegReleases()
+{
+    QUrlQuery updateInfoRequestUrlQuery;
+    QUrl updateInfoRequestUrl(converter_ffmpeg::releases);
+    updateInfoRequestUrl.setQuery(updateInfoRequestUrlQuery);
+
+    QNetworkRequest updateInfoRequest;
+    updateInfoRequest.setUrl(updateInfoRequestUrl);
+    QNetworkAccessManager* updateInfoNAM = new QNetworkAccessManager;
+    qDebug() << "requesting release infos from " << updateInfoRequestUrl.toString();
+    updateInfoNAM->get(updateInfoRequest);
+    connect(updateInfoNAM, &QNetworkAccessManager::finished, this, &ClipGrab::parseFFmpegReleases);
+}
+
 void ClipGrab::parseYtDlVersion(QNetworkReply* reply)
 {
     if (!reply->bytesAvailable())
@@ -319,12 +343,12 @@ void ClipGrab::parseYtDlVersion(QNetworkReply* reply)
     }
 
     QStringList lines = QString(reply->readAll()).split("\n");
+    QRegExp rx( "__version__\\s*=\\s*['\"](\\S+)['\"]");
     for (int i = 0; i < lines.size(); ++i)
     {
         if ( lines.at(i).contains("__version__"))
         {
             QString line = lines.at(i).trimmed();
-            QRegExp rx( "__version__\\s*=\\s*['\"](\\S+)['\"]");
             int r = rx.indexIn(line);
             int cc = rx.captureCount();
             if (r < 0 || cc != 1)
@@ -335,6 +359,69 @@ void ClipGrab::parseYtDlVersion(QNetworkReply* reply)
         }
     }
     emit updateYtDlVersion(QString::null);
+}
+
+void ClipGrab::parseFFmpegReleases(QNetworkReply* reply)
+{
+    QStringList releases;  // pairs of name and URL
+
+    if (!reply->bytesAvailable())
+    {
+        qDebug() << "Could not retrieve " << converter_ffmpeg::releases;
+        emit updateFFmpegVersions(releases);
+        return;
+    }
+
+    QString all_lines = QString(reply->readAll());
+    all_lines = all_lines.replace("{", "{\n");
+    all_lines = all_lines.replace("[", "[\n");
+    all_lines = all_lines.replace("\"}", "\"\n}");
+    all_lines = all_lines.replace("\",", "\",\n");
+    QStringList lines = all_lines.split("\n");
+    QRegExp rx( "\"browser_download_url\"\\s*:\\s*\"(\\S+)\"\\s*" );
+#if defined(Q_OS_LINUX)
+    const QString os_id = "-linux64";
+#elif defined(Q_OS_WIN)
+    const QString os_id = "-win64";
+// #elif defined(Q_OS_MAC)
+#else
+    emit updateFFmpegVersions(releases);
+    return;
+#endif
+
+    for (int i = 0; i < lines.size(); ++i)
+    {
+        if ( lines.at(i).contains("browser_download_url"))
+        {
+            QString line = lines.at(i).trimmed();
+            //qDebug() << "ffmpeg release download: " << line;
+            int r = rx.indexIn(line);
+            int cc = rx.captureCount();
+            if (r < 0 || cc != 1)
+                continue;
+            QString url = rx.cap(1);
+            int posLastSlash = url.lastIndexOf("/");
+            if ( posLastSlash < 0 || posLastSlash >= url.length() - 1 )
+                continue;
+            QString name = url.mid(posLastSlash+1);
+            if ( name.contains("-shared") || name.contains("-lgpl") || !name.contains(os_id) )
+                continue;
+            name = name.replace("ffmpeg-", "").replace("latest-", "").replace(os_id, "");
+            name = name.replace("-lgpl", "").replace("-gpl", "");
+            name = name.replace(".tar.xz", "").replace(".zip", "");
+            if ( name.startsWith("n") && name.contains("-") ) {
+                QStringList parts = name.split("-");
+                for (int k = parts.size() - 1; k >= 1; --k) {
+                    if ( parts[0].mid(1) == parts[k] )
+                        parts.removeAt(k);
+                }
+                name = parts.join("-");
+            }
+            // qDebug() << "ffmpeg release " << name << " @ " << url;
+            releases << name << url;
+        }
+    }
+    emit updateFFmpegVersions(releases);
 }
 
 void ClipGrab::parseUpdateInfo(QNetworkReply* reply)
@@ -608,34 +695,31 @@ void ClipGrab::downloadYoutubeDl(bool force) {
     }
     if (QSettings().value("disableYoutubeDlDownload", false).toBool()) return;
 
-    showDownloaderDlg();
+    showDownloaderDlg(TypedHelperDownloader::YTDL);
     if (this->helperDownloaderDialog->exec() != QDialog::Accepted) {
         QApplication::quit();
         QApplication::exit();
     }
 }
 
-void ClipGrab::showDownloaderDlg()
+void ClipGrab::showDownloaderDlg(TypedHelperDownloader::DownloaderType dlgType)
 {
     if ( !this->helperDownloaderDialog )
     {
         this->helperDownloaderDialog = new QDialog(QApplication::activeWindow());
-        this->helperDownloaderUi = new Ui::HelperDownloader();
+        this->helperDownloaderUi = new TypedHelperDownloader();
         this->helperDownloaderUi->setupUi(this->helperDownloaderDialog);
 
         connect(this->helperDownloaderUi->exitButton, &QPushButton::clicked, this->helperDownloaderDialog, &QDialog::reject);
         connect(this->helperDownloaderUi->continueButton, &QPushButton::clicked, this, &ClipGrab::startYoutubeDlDownload);
     }
+    this->helperDownloaderUi->setDialogType(dlgType);
     this->helperDownloaderDialog->show();
 }
 
-
 void ClipGrab::startYoutubeDlDownload()
 {
-    if ( !this->helperDownloaderDialog ) {
-        showDownloaderDlg();
-    }
-
+    showDownloaderDlg(TypedHelperDownloader::YTDL);
     this->helperDownloaderDialog->setDisabled(true);
 
     QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
@@ -684,6 +768,63 @@ void ClipGrab::startYoutubeDlDownload()
 
         this->helperDownloaderDialog->accept();
         emit youtubeDlDownloadFinished();
+    });
+}
+
+void ClipGrab::startFFmpegDownload(QString url)
+{
+    showDownloaderDlg(TypedHelperDownloader::FFMPEG);
+    this->helperDownloaderDialog->setDisabled(true);
+
+    QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    if (!QDir().exists(dir)) {
+        QDir().mkpath(dir);
+    }
+
+    int posLastSlash = url.lastIndexOf("/");
+    QString filename = url.mid(posLastSlash+1);
+    QString filePath = dir + "/" + filename;
+
+    this->ffmpegFile = new  QFile(filePath);
+    ffmpegFile->open(QFile::WriteOnly);
+    if (!ffmpegFile->isOpen()) {
+        errorHandler(tr("Unable to write to %1").arg(ffmpegFile->fileName()));
+        QApplication::quit();
+    }
+
+    QNetworkRequest request;
+    request.setUrl(QUrl(url));
+    request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    QNetworkAccessManager* youtubeDlNAM = new QNetworkAccessManager();
+    QNetworkReply* reply = youtubeDlNAM->get(request);
+
+    connect(reply, &QNetworkReply::readyRead, [=]() {
+        ffmpegFile->write(reply->readAll());
+    });
+    connect(reply, &QNetworkReply::downloadProgress, [=](qint64 bytesReceived, qint64 bytesTotal) {
+        this->helperDownloaderUi->progressBar->setMaximum(bytesTotal);
+        this->helperDownloaderUi->progressBar->setValue(bytesReceived);
+    });
+
+#if QT_VERSION >= 0x051200
+    connect(reply, &QNetworkReply::sslErrors, [=](QList<QSslError> errors) {
+        for (int i = 0; i < errors.length(); i++) {
+            QString errorString = errors.at(i).errorString();
+            QString certInfo = errors.at(i).certificate().issuerDisplayName() + " " + errors.at(i).certificate().subjectDisplayName() + " " +  errors.at(i).certificate().serialNumber() + " " + errors.at(i).error();
+            errorHandler(tr("SSL error: %1 \n%2").arg(errorString).arg(certInfo));
+        }
+    });
+#endif
+    connect(reply, &QNetworkReply::finished, [=] {
+        ffmpegFile->close();
+
+        if (reply->error() != QNetworkReply::NetworkError::NoError) {
+            errorHandler(tr("Error downloading ffmpeg: %1").arg(reply->errorString()));
+            QApplication::quit();
+        }
+
+        this->helperDownloaderDialog->accept();
+        emit FFmpegDownloadFinished(filePath);
     });
 }
 
@@ -908,4 +1049,10 @@ void ClipGrab::clearTempFiles() {
     for (int i = 0; i < files.length(); i++) {
         QFile::remove(files.at(i));
     }
+}
+
+void ClipGrab::handleFFmpegPathAndVersion(QString path, QString version) {
+    qDebug() << "ffmpeg converter reported path " << path << " version " << version;
+    ffmpegPath_ = path;
+    ffmpegVersion_ = version;
 }

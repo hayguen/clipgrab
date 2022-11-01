@@ -37,7 +37,7 @@ along with ClipGrab.  If not, see <http://www.gnu.org/licenses/>.
 #include "converter_ffmpeg.h"
 
 #include "ui_update_message.h"
-#include "ui_helper_downloader.h"
+#include "helper_downloader.h"
 #include "message_dialog.h"
 
 struct format
@@ -137,14 +137,20 @@ class ClipGrab : public QObject
 
     void getUpdateInfo();
     void getYtDlVersion();
+    void getFFmpegReleases();
 
     void downloadYoutubeDl(bool force = false);
     void updateYoutubeDl();
     QProcess* runYouTubeDl(QStringList);
     void startYoutubeDlDownload();
-    void showDownloaderDlg();
+    void startFFmpegDownload(QString url);
+    void showDownloaderDlg(TypedHelperDownloader::DownloaderType dlgType);
 
     void clearTempFiles();
+
+    void updateFFmpeg();
+    QString ffmpegPath() const { return ffmpegPath_; }
+    QString ffmpegVersion() const { return ffmpegVersion_; }
 
     // Helpers
     QString humanizeBytes(qint64);
@@ -156,17 +162,23 @@ class ClipGrab : public QObject
         QList<updateInfo> availableUpdates;
         QTemporaryFile* updateFile;
         QDialog* helperDownloaderDialog;
-        Ui::HelperDownloader* helperDownloaderUi;
+        TypedHelperDownloader* helperDownloaderUi;
         QFile* youtubeDlFile;
+        QFile* ffmpegFile;
         QNetworkReply* updateReply;
         video* currentVideo;
         video* currentSearch;
         QString youtubeDlPath;
         QProcess *youtubeDlUpdateProcess;
+        converter_ffmpeg * conv_ffmpeg;
+        QString ffmpegPath_;
+        QString ffmpegVersion_;
 
     private slots:
         void parseUpdateInfo(QNetworkReply* reply);
         void parseYtDlVersion(QNetworkReply* reply);
+        void parseFFmpegReleases(QNetworkReply* reply);
+        void handleFFmpegPathAndVersion(QString path, QString version);
 
     public slots:
         void errorHandler(QString);
@@ -192,10 +204,12 @@ class ClipGrab : public QObject
         void downloadFinished(video*);
         void searchFinished(video*);
         void youtubeDlDownloadFinished();
+        void FFmpegDownloadFinished(QString filePath);
         void compatibleUrlFoundInClipboard(QString url);
         void allDownloadsCanceled();
         void updateInfoProcessed();
         void updateYtDlVersion(QString version);
+        void updateFFmpegVersions(QStringList releases);
 };
 
 #endif // CLIPGRAB_H

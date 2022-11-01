@@ -82,7 +82,7 @@
       <item row="1" column="2">
        <widget class="QLabel" name="labelInfoText">
         <property name="text">
-         <string>&lt;p&gt;ClipGrab uses youtube-dl in order to download videos from the Internet. youtube-dl is developed by an independent team of Open Source developers and released into the public domain.&lt;br&gt;Learn more on &lt;a href=&quot;https://youtube-dl.org&quot;&gt;youtube-dl.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Click on &lt;em&gt;Continue&lt;/em&gt; to download youtube-dl.&lt;/p&gt;</string>
+         <string></string>
         </property>
         <property name="wordWrap">
          <bool>true</bool>
@@ -96,7 +96,7 @@
 font-size: 18px;</string>
         </property>
         <property name="text">
-         <string>Downloading youtube-dl</string>
+         <string></string>
         </property>
        </widget>
       </item>
