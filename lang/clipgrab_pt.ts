@@ -56,6 +56,10 @@
 %2</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Error downloading ffmpeg: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DownloadListModel</name>
@@ -123,11 +127,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Downloading youtube-dl</source>
+        <source>&lt;p&gt;ClipGrab uses %1 in order to convert downloaded videos. %1 is developed by an independent team of Open Source developers. It is free software.&lt;br&gt;Learn more on &lt;a href=&quot;%2&quot;&gt;%3&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Click on &lt;em&gt;Continue&lt;/em&gt; to download %1.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;ClipGrab uses youtube-dl in order to download videos from the Internet. youtube-dl is developed by an independent team of Open Source developers and released into the public domain.&lt;br&gt;Learn more on &lt;a href=&quot;https://youtube-dl.org&quot;&gt;youtube-dl.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Click on &lt;em&gt;Continue&lt;/em&gt; to download youtube-dl.&lt;/p&gt;</source>
+        <source>&lt;p&gt;ClipGrab uses %1 in order to download videos from the Internet. %1 is developed by an independent team of Open Source developers and released into the public domain.&lt;br&gt;Learn more on &lt;a href=&quot;%2&quot;&gt;%3&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Click on &lt;em&gt;Continue&lt;/em&gt; to download %1.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -230,8 +238,39 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>youtube-dl: %1 (%2)
-Python: %3 (%4)</source>
+        <source>Update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>not available</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;h2&gt;YouTube Downloader&lt;/h2&gt;
+youtube-dl: %1 (%2)&lt;br&gt;youtube-dl at &lt;a href=&quot;%5&quot;&gt;%6&lt;/a&gt; (%7)&lt;br&gt;Python: %3 (%4)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;h2&gt;Versions&lt;/h2&gt;
+youtube-dl: &lt;b&gt;not found!&lt;/b&gt;&lt;br&gt;youtube-dl at &lt;a href=&quot;%3&quot;&gt;%4&lt;/a&gt; (%7)&lt;br&gt;Python: %1 (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Force Update!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;h2&gt;A/V Converter&lt;/h2&gt;
+FFmpeg: %1 (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;h2&gt;A/V Converter&lt;/h2&gt;
+FFmpeg: &lt;b&gt;not found!&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>FFmpeg at &lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt; (daily builds)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -540,13 +579,37 @@ Visit &lt;a href=&quot;https://www.qt.io&quot;&gt;qt.io&lt;/a&gt;, &lt;a href=&q
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Keep Download URL</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&lt;h2&gt;Thanks&lt;/h2&gt;
 ClipGrab relies on the work of the Qt project, the ffmpeg team, and the youtube-dl team.&lt;br&gt;
 Visit &lt;a href=&quot;https://www.qt.io&quot;&gt;qt.io&lt;/a&gt;, &lt;a href=&quot;https://ffmpeg.org&quot;&gt;ffmpeg.org&lt;/a&gt;, and &lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt; for further information.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clipboard:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>URL:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Here you can configure FFmpeg&apos;s target bitrate for audio only (mp3) - in kBit: 4 - 384</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Here you can configure FFmpeg&apos;s target quality for audio only (ogg): 1 - 9</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Check</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete!</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -645,6 +708,14 @@ Downloading 1080p videos from YouTube is not supported.</source>
     <message>
         <source>Original (audio only)</source>
         <translation>Original (apenas áudio)</translation>
+    </message>
+    <message>
+        <source>PCM/WAV (audio only)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PCM/WAV (mono, audio only)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
