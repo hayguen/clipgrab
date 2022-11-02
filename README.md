@@ -4,6 +4,8 @@
 ClipGrab was a GUI frontend for [youtube-dl](https://youtube-dl.org).
 Now, it's a GUI frontend for [yt-dlp](https://github.com/yt-dlp/yt-dlp).
 
+Besides downloading clips, [FFmpeg](https://ffmpeg.org) is utilized to convert to other video or audio formats.
+
 See below for instructions, if you are building yourself.
 
 Prebuilt [AppImage Download](https://clipgrab.org/) images are available and recommended.
