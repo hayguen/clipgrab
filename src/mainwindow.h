@@ -27,10 +27,16 @@
 #include <QMainWindow>
 #include <QShortcut>
 #include <QSignalMapper>
-#include <QtXml>
 #include <QUrl>
 #include <QUrlQuery>
+
+#if CLIPGRAB_ORG_UPDATER
+#include <QtXml>
+#endif
+#if USE_WEBENGINE
 #include <QtWebEngineWidgets>
+#endif
+
 #include <QFontDatabase>
 #include "ui_mainwindow.h"
 #include "ui_metadata-dialog.h"
@@ -40,6 +46,7 @@
 #include "download_list_model.h"
 
 
+#if USE_WEBENGINE
 class SearchWebEngineUrlRequestInterceptor : public QWebEngineUrlRequestInterceptor
 {
     Q_OBJECT
@@ -59,7 +66,7 @@ public:
 signals:
         void intercepted(const QUrl & url);
 };
-
+#endif
 
 class MainWindow : public QMainWindow
 {
@@ -109,6 +116,7 @@ private:
      bool updatingComboQuality;
      void updateYoutubeDlVersionInfo();
      void handleYtDlVersion(QString version);
+     void handleProgramVersion(QString version);
      void handleFFmpegVersion(QString path, QString version, QStringList releases);
      void handleFFmpegDelete();
      void updateAvailableFormats();

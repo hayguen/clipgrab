@@ -27,18 +27,22 @@ along with ClipGrab.  If not, see <http://www.gnu.org/licenses/>.
 #include <QApplication>
 #include <QtGui>
 #include <QtNetwork>
-#include <QtXml>
 #include <QtDebug>
 #include <QtWidgets>
 
 #include "video.h"
 #include "converter.h"
-#include "converter_copy.h"
 #include "converter_ffmpeg.h"
 
-#include "ui_update_message.h"
 #include "helper_downloader.h"
+
+#if CLIPGRAB_ORG_UPDATER
+#include <QtXml>
+#endif
+#if USE_WEBENGINE
+#include "ui_update_message.h"
 #include "message_dialog.h"
+#endif
 
 struct format
 {
@@ -55,6 +59,9 @@ struct language
     QString code;
     bool isRTL;
 };
+
+
+#if CLIPGRAB_ORG_UPDATER
 
 struct updateInfo
 {
@@ -109,6 +116,7 @@ struct updateInfo
     }
 };
 
+#endif
 
 class ClipGrab : public QObject
 {
@@ -116,6 +124,10 @@ class ClipGrab : public QObject
 
     public:
     ClipGrab();
+
+    static const char * version_url;   // check for line: VERSION = 3.9.6
+    static const char * homepage_url;
+    static const char * homepage_short;
 
     QList<format> formats;
     QList<video*> downloads;
@@ -135,7 +147,10 @@ class ClipGrab : public QObject
     int getRunningDownloadsCount();
     QPair<qint64, qint64> getDownloadProgress();
 
+#if CLIPGRAB_ORG_UPDATER
     void getUpdateInfo();
+#endif
+    void getProgramVersion();
     void getYtDlVersion();
     void getFFmpegReleases();
 
@@ -157,9 +172,13 @@ class ClipGrab : public QObject
     QString humanizeSeconds(qint64);
 
     protected:
+#if USE_WEBENGINE
         QDialog* updateMessageDialog;
         Ui::UpdateMessage* updateMessageUi;
+#endif
+#if CLIPGRAB_ORG_UPDATER
         QList<updateInfo> availableUpdates;
+#endif
         QTemporaryFile* updateFile;
         QDialog* helperDownloaderDialog;
         TypedHelperDownloader* helperDownloaderUi;
@@ -175,8 +194,11 @@ class ClipGrab : public QObject
         QString ffmpegVersion_;
 
     private slots:
+#if CLIPGRAB_ORG_UPDATER
         void parseUpdateInfo(QNetworkReply* reply);
+#endif
         void parseYtDlVersion(QNetworkReply* reply);
+        void parseProgramVersion(QNetworkReply* reply);
         void parseFFmpegReleases(QNetworkReply* reply);
         void handleFFmpegPathAndVersion(QString path, QString version);
 
@@ -192,11 +214,13 @@ class ClipGrab : public QObject
         void clipboardChanged();
         void activateProxySettings();
 
+#if CLIPGRAB_ORG_UPDATER
         void startUpdateDownload();
         void skipUpdate();
         void updateDownloadFinished();
         void updateDownloadProgress(qint64, qint64);
         void updateReadyRead();
+#endif
 
     signals:
         void currentVideoStateChanged(video*);
@@ -207,9 +231,12 @@ class ClipGrab : public QObject
         void FFmpegDownloadFinished(QString filePath);
         void compatibleUrlFoundInClipboard(QString url);
         void allDownloadsCanceled();
+#if CLIPGRAB_ORG_UPDATER
         void updateInfoProcessed();
+#endif
         void updateYtDlVersion(QString version);
         void updateFFmpegVersions(QStringList releases);
+        void updateProgramVersion(QString version);
 };
 
 #endif // CLIPGRAB_H

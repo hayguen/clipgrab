@@ -3,8 +3,15 @@
 #if USE_YTDLP
 // A youtube-dl fork with additional features and fixes
 // see https://github.com/yt-dlp/yt-dlp
+#if defined(Q_OS_WIN)
+#define NEED_PYTHON 0
+const char * YoutubeDl::python = "";
+const char * YoutubeDl::executable = "yt-dlp.exe";
+#else
+#define NEED_PYTHON 1
 const char * YoutubeDl::python = "python3";
 const char * YoutubeDl::executable = "yt-dlp";
+#endif
 const char * YoutubeDl::homepage_url = "https://github.com/yt-dlp/yt-dlp";
 const char * YoutubeDl::homepage_short = "github.com/yt-dlp/yt-dlp";
 
@@ -22,6 +29,7 @@ const char * YoutubeDl::download_url = "https://github.com/yt-dlp/yt-dlp/release
 #else
 // (probably) the origin of youtube-dl
 // see https://yt-dl.org
+#define NEED_PYTHON 1
 const char * YoutubeDl::python = "python";
 const char * YoutubeDl::executable = "youtube-dl";
 const char * YoutubeDl::version_url = "https://raw.githubusercontent.com/ytdl-org/youtube-dl/master/youtube_dl/version.py";
@@ -90,7 +98,12 @@ QProcess* YoutubeDl::instance(QString python_program, QStringList arguments, boo
 
     bool add_pyprog_arg = true;
 #if defined Q_OS_WIN
-    process->setProgram(execPath + "/python/python.exe");
+    if ( python_program.endsWith(".exe", Qt::CaseInsensitive) ) {
+        process->setProgram(python_program);
+        add_pyprog_arg = false;
+    }
+    else
+        process->setProgram(execPath + "/python/python.exe");
 #else
     if ( !python_program.isEmpty() ) {
         QFileDevice::Permissions perm = QFile(python_program).permissions() | QFile::ExeUser | QFile::ExeGroup | QFile::ExeOther;
@@ -164,6 +177,9 @@ QString YoutubeDl::getVersion() {
 }
 
 QString YoutubeDl::getPythonVersion() {
+#if (NEED_PYTHON == 0)
+    return "";
+#endif
     QProcess* youtubeDl = instance("", QStringList("--version"), false);
     youtubeDl->start();
     youtubeDl->waitForFinished(10000);
@@ -175,6 +191,9 @@ QString YoutubeDl::getPythonVersion() {
 }
 
 QString YoutubeDl::findPython() {
+#if (NEED_PYTHON == 0)
+    return "";
+#endif
     QProcess* youtubeDl = instance("", QStringList("--version"), false);
     QString program = youtubeDl->program();
     youtubeDl->deleteLater();

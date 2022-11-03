@@ -10,8 +10,30 @@ QT += core
 QT += widgets
 QT += gui
 QT += network
-QT += xml
-QT += webenginewidgets
+
+CLIPGRAB_ORG_UPDATER = 0
+DEFINES += "HIDE_DONATION=1"
+
+CLIPGRAB_ORG_UPDATER {
+  QT += xml
+  DEFINES += "CLIPGRAB_ORG_UPDATER=1"
+  win32 {
+    WEBENGINE = 0
+  } else {
+    WEBENGINE = 1
+  }
+} else {
+  DEFINES += "CLIPGRAB_ORG_UPDATER=0"
+  WEBENGINE = 0
+}
+
+WEBENGINE {
+  QT += webenginewidgets
+  DEFINES += "USE_WEBENGINE=1"
+} else {
+  DEFINES += "USE_WEBENGINE=0"
+}
+
 
 DEFINES += "USE_YTDLP=1"
 
@@ -30,16 +52,9 @@ HEADERS += \
     src/mainwindow.h \
     src/video.h \
     src/notifications.h \
-    src/message_dialog.h \
     src/clipgrab.h \
-    src/web_engine_view.h \
     src/youtube_dl.h
-FORMS += \
-    src/ui/metadata-dialog.ui \
-    src/ui/helper_downloader.ui \
-    src/ui/mainwindow.ui \
-    src/ui/update_message.ui \
-    src/ui/message_dialog.ui
+
 SOURCES += \
     src/converter.cpp \
     src/converter_copy.cpp \
@@ -50,10 +65,20 @@ SOURCES += \
     src/mainwindow.cpp \
     src/video.cpp \
     src/notifications.cpp \
-    src/message_dialog.cpp \
     src/clipgrab.cpp \
-    src/web_engine_view.cpp \
     src/youtube_dl.cpp
+
+FORMS += \
+    src/ui/metadata-dialog.ui \
+    src/ui/helper_downloader.ui \
+    src/ui/mainwindow.ui
+
+WEBENGINE {
+  FORMS   += src/ui/message_dialog.ui src/ui/update_message.ui
+  HEADERS += src/message_dialog.h     src/web_engine_view.h
+  SOURCES += src/message_dialog.cpp   src/web_engine_view.cpp
+}
+
 RESOURCES += resources.qrc
 TRANSLATIONS += lang/clipgrab_bg.ts \
                 lang/clipgrab_bn.ts \
@@ -99,4 +124,4 @@ macx {
     LIBS += -framework AppKit -framework Foundation
 }
 VERSION = 3.9.6
-DEFINES += CLIPGRAB_VERSION=$$VERSION
+DEFINES += "CLIPGRAB_VERSION=$$VERSION"

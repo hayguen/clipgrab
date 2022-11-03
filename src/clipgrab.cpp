@@ -21,7 +21,13 @@
 
 
 #include "clipgrab.h"
+#include "converter_copy.h"
 #include "helper_downloader.h"
+
+const char * ClipGrab::version_url = "https://raw.githubusercontent.com/hayguen/clipgrab/master/clipgrab.pro";
+const char * ClipGrab::homepage_url = "https://github.com/hayguen/clipgrab";
+const char * ClipGrab::homepage_short = "github.com/hayguen/clipgrab";
+
 
 ClipGrab::ClipGrab()
 {
@@ -271,6 +277,8 @@ void ClipGrab::clearCurrentVideo() {
     }
 }
 
+#if CLIPGRAB_ORG_UPDATER
+
 void ClipGrab::getUpdateInfo()
 {
     //*
@@ -305,6 +313,23 @@ void ClipGrab::getUpdateInfo()
     connect(updateInfoNAM, &QNetworkAccessManager::finished, this, &ClipGrab::parseUpdateInfo);
 }
 
+#endif
+
+
+void ClipGrab::getProgramVersion()
+{
+    QUrlQuery updateInfoRequestUrlQuery;
+    QUrl updateInfoRequestUrl(ClipGrab::version_url);
+    updateInfoRequestUrl.setQuery(updateInfoRequestUrlQuery);
+
+    QNetworkRequest updateInfoRequest;
+    updateInfoRequest.setUrl(updateInfoRequestUrl);
+    QNetworkAccessManager* updateInfoNAM = new QNetworkAccessManager;
+    qDebug() << "requesting update info from " << updateInfoRequestUrl.toString();
+    updateInfoNAM->get(updateInfoRequest);
+    connect(updateInfoNAM, &QNetworkAccessManager::finished, this, &ClipGrab::parseProgramVersion);
+}
+
 void ClipGrab::getYtDlVersion()
 {
     QUrlQuery updateInfoRequestUrlQuery;
@@ -332,6 +357,35 @@ void ClipGrab::getFFmpegReleases()
     updateInfoNAM->get(updateInfoRequest);
     connect(updateInfoNAM, &QNetworkAccessManager::finished, this, &ClipGrab::parseFFmpegReleases);
 }
+
+void ClipGrab::parseProgramVersion(QNetworkReply* reply)
+{
+    if (!reply->bytesAvailable())
+    {
+        qDebug() << "Could not reach update server C";
+        emit updateProgramVersion(QString::null);
+        return;
+    }
+
+    QStringList lines = QString(reply->readAll()).split("\n");
+    QRegExp rx( "VERSION\\s*=\\s*(\\S+)");
+    for (int i = 0; i < lines.size(); ++i)
+    {
+        if ( lines.at(i).contains("VERSION"))
+        {
+            QString line = lines.at(i).trimmed();
+            int r = rx.indexIn(line);
+            int cc = rx.captureCount();
+            if (r < 0 || cc != 1)
+                continue;
+            QString v = rx.cap(1);
+            emit updateProgramVersion(v);
+            return;
+        }
+    }
+    emit updateProgramVersion(QString::null);
+}
+
 
 void ClipGrab::parseYtDlVersion(QNetworkReply* reply)
 {
@@ -424,6 +478,7 @@ void ClipGrab::parseFFmpegReleases(QNetworkReply* reply)
     emit updateFFmpegVersions(releases);
 }
 
+#if CLIPGRAB_ORG_UPDATER
 void ClipGrab::parseUpdateInfo(QNetworkReply* reply)
 {
     if (!reply->bytesAvailable())
@@ -493,6 +548,7 @@ void ClipGrab::parseUpdateInfo(QNetworkReply* reply)
 
             if (settings.value("skip-" + this->availableUpdates.last().version , false).toBool() == false)
             {
+#if USE_WEBENGINE
                 this->updateMessageUi = new Ui::UpdateMessage();
                 this->updateMessageDialog = new QDialog(QApplication::activeWindow());
                 this->updateMessageUi->setupUi(this->updateMessageDialog);
@@ -505,11 +561,12 @@ void ClipGrab::parseUpdateInfo(QNetworkReply* reply)
                 this->updateMessageUi->webEngineView->setHtml(updateNotesDocument.toString());
                 this->updateMessageUi->webEngineView->setContextMenuPolicy(Qt::NoContextMenu);
                 this->updateMessageUi->webEngineView->setAcceptDrops(false);
+#endif
 
                 this->updateReply = nullptr;
                 this->updateFile = nullptr;
 
-
+#if USE_WEBENGINE
                 connect(this->updateMessageUi->buttonConfirm, SIGNAL(clicked()), this, SLOT(startUpdateDownload()));
                 connect(this->updateMessageUi->buttonSkip, SIGNAL(clicked()), this, SLOT(skipUpdate()));
 
@@ -528,6 +585,7 @@ void ClipGrab::parseUpdateInfo(QNetworkReply* reply)
                         this->updateFile->deleteLater();
                     }
                 }
+#endif
             }
         }
     }
@@ -566,6 +624,7 @@ void ClipGrab::parseUpdateInfo(QNetworkReply* reply)
 
             if (command.attribute("type") == "message")
             {
+#if USE_WEBENGINE
                 messageDialog* dialog = new messageDialog(QApplication::activeWindow());
                 dialog->setUrl(QUrl(command.attribute("uri")));
 
@@ -587,6 +646,7 @@ void ClipGrab::parseUpdateInfo(QNetworkReply* reply)
                     }
                 }
                 dialog->exec();
+#endif
             }
             else if ((command.attribute("type") == "open"))
             {
@@ -614,6 +674,7 @@ void ClipGrab::startUpdateDownload()
     this->updateFile->open();
     qDebug() << "Downloading update to " << this->updateFile->fileName();
 
+#if USE_WEBENGINE
     this->updateMessageUi->buttonConfirm->setDisabled(true);
     this->updateMessageUi->buttonLater->setDisabled(true);
     this->updateMessageUi->buttonSkip->setDisabled(true);
@@ -621,6 +682,7 @@ void ClipGrab::startUpdateDownload()
     this->updateMessageUi->progressBar->setValue(0);
     this->updateMessageUi->progressBar->show();
     this->updateMessageUi->labelDownloadProgress->show();
+#endif
 
     QNetworkAccessManager* updateNAM = new QNetworkAccessManager();
     this->updateReply = updateNAM->get(QNetworkRequest(QUrl(updateUrl)));
@@ -636,12 +698,17 @@ void ClipGrab::updateReadyRead()
 
 void ClipGrab::updateDownloadProgress(qint64 progress, qint64 total)
 {
+#if USE_WEBENGINE
     int updateProgress = progress/1024/1024;
     int updateSize = total/1024/1024;
 
     this->updateMessageUi->labelDownloadProgress->setText(tr("Downloading update … %1/%2 MBytes").arg(QString::number(updateProgress), QString::number(updateSize)));
     this->updateMessageUi->progressBar->setMaximum(updateSize);
     this->updateMessageUi->progressBar->setValue(updateProgress);
+#else
+    (void)progress;
+    (void)total;
+#endif
 }
 
 void ClipGrab::updateDownloadFinished()
@@ -649,7 +716,9 @@ void ClipGrab::updateDownloadFinished()
     if (this->updateReply->error())
     {
         this->errorHandler(tr("There was an error while downloading the update.: %1").arg(this->updateReply->errorString()));
+#if USE_WEBENGINE
         this->updateMessageDialog->reject();
+#endif
         return;
     }
 
@@ -663,7 +732,9 @@ void ClipGrab::updateDownloadFinished()
     if (hashResult != updateSha1)
     {
         this->errorHandler(tr("The fingerprint of the downloaded update file could not be verified: %1 should have been %2").arg(hashResult, updateSha1));
+#if USE_WEBENGINE
         this->updateMessageDialog->reject();
+#endif
         return;
     }
 
@@ -676,13 +747,16 @@ void ClipGrab::updateDownloadFinished()
     {
         errorHandler(tr("Could not open update file."));
         this->updateFile->remove();
+#if USE_WEBENGINE
         this->updateMessageDialog->reject();
+#endif
         return;
     }
 
     settings.setValue("updateFile", this->updateFile->fileName());
     QApplication::quit();
 }
+#endif
 
 void ClipGrab::downloadYoutubeDl(bool force) {
     QString minVersion = QSettings().value("minYoutubeDlVersion", "2020.12.07").toString();
@@ -838,11 +912,12 @@ void ClipGrab::updateYoutubeDl() {
     });
 }
 
+#if CLIPGRAB_ORG_UPDATER
 void ClipGrab::skipUpdate()
 {
     settings.setValue("skip-" + this->availableUpdates.last().version, true);
 }
-
+#endif
 
 void ClipGrab::errorHandler(QString error)
 {

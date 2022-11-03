@@ -49,7 +49,13 @@ void MainWindow::init()
     //*
     //* Adding version info to the footer
     //*
-    this->ui.label->setText(ui.label->text().replace("%version", "ClipGrab " + QCoreApplication::applicationVersion()));
+    {
+        QLabel * footer = this->ui.label_status_version;
+        footer->setText(footer->text().replace("%version", "ClipGrab " + QCoreApplication::applicationVersion()));
+#if CLIPGRAB_ORG_UPDATER == 0
+        footer->hide();
+#endif
+    }
 
     //*
     //* Tray Icon
@@ -169,7 +175,15 @@ void MainWindow::init()
       ui.settingsForceIpV4->setChecked(cg->settings.value("forceIpV4", false).toBool());
       ui.settingsUpdateCheck->setChecked(cg->settings.value("Check-Updates", true).toBool());
       ui.settingsShowLogo->setChecked(cg->settings.value("Show-Logo", true).toBool());
-
+#if CLIPGRAB_ORG_UPDATER == 0
+      ui.settingsUpdateCheck->hide();
+      ui.settingsShowLogo->hide();
+      on_settingsShowLogo_toggled(false);
+#endif
+#if HIDE_DONATION
+      ui.labelSupport->hide();
+      ui.buttonDonate->hide();
+#endif
 
     int langIndex = 0;
     for (int i=0; i < cg->languages.count(); i++)
@@ -314,18 +328,38 @@ void MainWindow::init()
     });
     connect(this->ui.ff_delete, &QPushButton::clicked, this, &MainWindow::handleFFmpegDelete);
 
+
+#if CLIPGRAB_ORG_UPDATER == 0
+    QObject::connect(cg, &ClipGrab::updateProgramVersion, this, &MainWindow::handleProgramVersion );
+    connect(this->ui.program_version_check, &QPushButton::clicked, [=]() {
+        this->cg->getProgramVersion();
+        this->ui.program_version_check->setEnabled(false);
+    });
+    handleProgramVersion(QString::null);
+#else
+    ui.program_version_check->hide();
+    ui.labelProgramVersionInfo->hide();
+    ui.verticalSpacer_buttons_program->hide();
+    ui.verticalSpacer_program->hide();
+#endif
+
+
     QTimer::singleShot(300, [=] {
         cg->clipboardChanged();
         this->cg->getYtDlVersion();
         this->handleFFmpegVersion( this->cg->ffmpegPath(), this->cg->ffmpegVersion(), QStringList() );
         this->cg->getFFmpegReleases();
+#if CLIPGRAB_ORG_UPDATER == 0
+        this->cg->getProgramVersion();
+#endif
     });
 }
 
 void MainWindow::handleFFmpegDelete() {
     QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    if ( QFile::exists(dir+"/ffmpeg") )
-        QFile::remove(dir+"/ffmpeg");
+    QString executable = dir + "/" + converter_ffmpeg::executable;
+    if ( QFile::exists(executable) )
+        QFile::remove(executable);
     cg->updateFFmpeg();
     updateAvailableFormats();
     cg->getFFmpegReleases();
@@ -847,21 +881,23 @@ void MainWindow::updateYoutubeDlVersionInfo()
 void MainWindow::handleYtDlVersion(QString online_version) {
     if (online_version.isEmpty())
         online_version = tr("not available");
-    qDebug() << "MainWindow received online version: " << online_version;
+    qDebug() << "MainWindow received YT online version: " << online_version;
 
     QString youtubeDlVersion = YoutubeDl::getVersion();
     QString pythonVersion = YoutubeDl::getPythonVersion();
     QString youtubeDlPath = YoutubeDl::find();
     QString pythonPath = YoutubeDl::findPython();
-    QString label = tr("<h2>YouTube Downloader</h2>\nyoutube-dl: %1 (%2)<br>youtube-dl at <a href=\"%5\">%6</a> (%7)<br>Python: %3 (%4)")
-                        .arg(youtubeDlPath, youtubeDlVersion, pythonPath, pythonVersion)
+    QString label = tr("<h2>YouTube Downloader</h2>\nyoutube-dl: %1 (%2)<br>youtube-dl at <a href=\"%3\">%4</a> (%5)")
+                        .arg(youtubeDlPath, youtubeDlVersion)
                         .arg(YoutubeDl::homepage_url, YoutubeDl::homepage_short)
                         .arg(online_version);
     if ( youtubeDlVersion.isEmpty() )
-        label = tr("<h2>Versions</h2>\nyoutube-dl: <b>not found!</b><br>youtube-dl at <a href=\"%3\">%4</a> (%7)<br>Python: %1 (%2)")
-                    .arg(pythonPath, pythonVersion)
+        label = tr("<h2>Versions</h2>\nyoutube-dl: <b>not found!</b><br>youtube-dl at <a href=\"%1\">%2</a> (%3)")
                     .arg(YoutubeDl::homepage_url, YoutubeDl::homepage_short)
                     .arg(online_version);
+    if ( !pythonPath.isEmpty() || !pythonVersion.isEmpty() )
+        label = label + tr("<br>Python: %1 (%2)").arg(pythonPath, pythonVersion);
+
     ui.labelYoutubeDlVersionInfo->setText(label);
 
     ui.yt_version_check->setEnabled(true);
@@ -871,6 +907,23 @@ void MainWindow::handleYtDlVersion(QString online_version) {
     ui.yt_delete->setEnabled(!youtubeDlVersion.isEmpty());
 }
 
+void MainWindow::handleProgramVersion(QString online_version)
+{
+    if (online_version.isEmpty())
+        online_version = tr("not available");
+    qDebug() << "MainWindow received Program online version: " << online_version;
+
+    QString label = tr("<h2>ClipGrab</h2>\nClipGrab: %1<br>ClipGrab at <a href=\"%3\">%4</a> (%5)").arg(
+                QCoreApplication::applicationVersion(),
+                ClipGrab::homepage_url, ClipGrab::homepage_short,
+                online_version
+                );
+
+    ui.labelProgramVersionInfo->setText(label);
+    ui.program_version_check->setEnabled(true);
+}
+
+
 void MainWindow::handleFFmpegReleases(QStringList releases)
 {
     handleFFmpegVersion(cg->ffmpegPath(), cg->ffmpegVersion(), releases);
@@ -878,10 +931,10 @@ void MainWindow::handleFFmpegReleases(QStringList releases)
 
 void MainWindow::handleFFmpegDownloadFinished(QString filePath)
 {
+    QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     ffmpegDownloadedArchive = filePath;
     qDebug() << "FFmpeg download finished: " << filePath;
 
-    QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     handleFFmpegDelete();
     if ( !ffmpegUnpackProcess ) {
         ffmpegUnpackProcess = new QProcess(this);
@@ -902,17 +955,30 @@ void MainWindow::handleFFmpegDownloadFinished(QString filePath)
         << "-xvf"
         << filePath
         << "--no-anchored"
-        << "ffmpeg"
+        << converter_ffmpeg::executable
         << "-C"
         << dir
         << "--strip-components"
         << "2"
         );
-//#elif defined(Q_OS_WIN)
+#elif defined(Q_OS_WIN)
+    if (!filePath.endsWith(".zip", Qt::CaseInsensitive)) {
+        qDebug() << "Error: expected .zip!";
+        QFile::remove(filePath);
+        return;
+    }
+    QDir(dir+"/temp").removeRecursively();
+    QDir(dir).mkdir("temp");
+    // https://learn.microsoft.com/de-de/powershell/module/microsoft.powershell.archive/expand-archive?view=powershell-5.1
+    QString cmd = QString("& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('%1', 'temp'); }").arg(filePath);
+    ffmpegUnpackProcess->setWorkingDirectory(dir);
+    ffmpegUnpackProcess->setProgram("powershell.exe");
+    ffmpegUnpackProcess->setArguments( QStringList() << "-nologo" << "-noprofile" << "-command" << cmd );
+
 // #elif defined(Q_OS_MAC)
 #else
     qDebug() << "Error: Unpacking not implemented on this platform!";
-    QFile::remove(filePath);
+    //QFile::remove(filePath);
     return;
 #endif
     ffmpegUnpackProcess->start();
@@ -926,6 +992,29 @@ void MainWindow::handleFFmpegUnpackFinished(int exitCode, QProcess::ExitStatus e
         qDebug() << "FFmpeg archive not found!";
         return;
     }
+#if defined(Q_OS_WIN)
+    {
+        QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+        QFileInfo fi( ffmpegDownloadedArchive );
+        QString zip_fn = fi.fileName();
+        QString zip_dir = zip_fn.left(zip_fn.length()-4);
+        QString executable = dir + "/temp/" + zip_dir + "/bin/" + converter_ffmpeg::executable;
+        QString target = dir + "/" + converter_ffmpeg::executable;
+        if ( QFile::exists(executable) )
+        {
+            if ( QFile::exists(target) )
+                QFile::remove(target);
+            bool ok = QFile::copy(executable, target);
+            if (ok)
+                QDir(dir+"/temp").removeRecursively();
+            else
+                qDebug() << "Error: failed to copy " << executable << " to " << target;
+        }
+        else
+            qDebug() << "Error: " << executable << " not found in unpacked zip";
+    }
+#endif
+
     cg->updateFFmpeg();
     updateAvailableFormats();
     cg->getFFmpegReleases();

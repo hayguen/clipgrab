@@ -47,11 +47,13 @@ int main(int argc, char *argv[])
     parser.addVersionOption();
     parser.addHelpOption();
     QCommandLineOption startMinimizedOption(QStringList() << "start-minimized", "Hide the ClipGrab window on launch");
+    parser.addOption(startMinimizedOption);
+#if CLIPGRAB_ORG_UPDATER
     QCommandLineOption suppress_update_option(QStringList() << "no-update", "Suppress update checking");
     QCommandLineOption perform_update_option(QStringList() << "update", "Check for updates");
-    parser.addOption(startMinimizedOption);
     parser.addOption(perform_update_option);
     parser.addOption(suppress_update_option);
+#endif
     parser.process(app);
 
     QSettings settings;
@@ -95,6 +97,7 @@ int main(int argc, char *argv[])
         w.show();
     }
 
+#if CLIPGRAB_ORG_UPDATER
     bool check_update = settings.value("Check-Updates", true).toBool();
     if ( (check_update || parser.isSet(perform_update_option) ) && !parser.isSet(suppress_update_option) ) {
         QTimer::singleShot(0, [=] {
@@ -109,6 +112,7 @@ int main(int argc, char *argv[])
     else {
         qDebug() << "not checking for updates. start clipgrab with command-line option '--update' or '--enable-updates', if desired";
     }
+#endif
 
     return app.exec();
 }

@@ -23,7 +23,11 @@
 #include "converter_ffmpeg.h"
 
 const char * converter_ffmpeg::name = "FFmpeg";
+#if defined(Q_OS_WIN)
+const char * converter_ffmpeg::executable = "ffmpeg.exe";
+#else
 const char * converter_ffmpeg::executable = "ffmpeg";
+#endif
 const char * converter_ffmpeg::homepage_url = "https://github.com/BtbN/FFmpeg-Builds";
 const char * converter_ffmpeg::homepage_short = "github.com/BtbN/FFmpeg-Builds";
 const char * converter_ffmpeg::releases = "https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/latest";
