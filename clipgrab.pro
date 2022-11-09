@@ -125,3 +125,15 @@ macx {
 }
 VERSION = 3.9.6
 DEFINES += "CLIPGRAB_VERSION=$$VERSION"
+
+package.path = $$(PREFIX)/bin
+package.files += $$TARGET$$TARGET_EXT
+# package.CONFIG += no_check_exist
+
+extra_install.path = $$(PREFIX)/share/pixmaps
+# extra_install.extra = cp img/icon.png clipgrab.png
+extra_install.files = img/icon.png
+
+
+INSTALLS += package
+INSTALLS += extra_install

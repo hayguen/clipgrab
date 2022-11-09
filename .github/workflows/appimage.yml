@@ -1,0 +1,51 @@
+
+name: Continuous AppImage build
+
+on:
+  push
+
+jobs:
+  build-appimage:
+
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: os info
+        run: lsb_release -a
+      - name: install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qt5-default qtdeclarative5-dev qtbase5-dev qttools5-dev-tools \
+            gettext build-essential g++ python3
+      # - name: setup appimage-builder
+      #   run: sudo pip3 install appimage-builder
+      - name: qmake and build
+        run: |
+          qmake clipgrab.pro
+          make -j`nproc`
+        env:
+          PREFIX: AppDir/usr/local
+      - name: install
+        run: make install
+      - name: list
+        run: ls -alR AppDir
+      # - name: Build AppImage
+      #   run: appimage-builder
+      #   env:
+      #     UPDATE_INFO: gh-releases-zsync|Github-Action-hayguen|appimage-clipgrab-qt5|latest|*x86_64.AppImage.zsync
+      - name: Build / Pack AppImage
+        uses: docker://appimagecrafters/appimage-builder:0.8.4
+        with:
+          entrypoint: appimage-builder
+          args: --recipe ./AppImageBuilder.yml --skip-test
+      - uses: actions/upload-artifact@v2
+        with:
+          name: AppImage
+          path: './*.AppImage*'
+
+#      - name: os updates
+#        run: |
+#          sudo apt update
+#          sudo apt -y upgrade
+
