@@ -47,17 +47,12 @@ AppDir:
       - ffmpeg
       - python3
       - build-essential
-      - cmake
       - python3-dev
       - libpython3-dev
       - libpython3.8-dev
-      - libpython3-all-dev
       - libffi7
-      - libffi-dev
-      - python3-cffi-backend
       - xz-utils
       - tar
-      - bash
 
     exclude:
       - libkf5service-bin
@@ -99,7 +94,7 @@ AppDir:
     - ln -fs /usr/lib/libcrypt.so.2 $APPDIR/usr/lib/libcrypt.so.1
     # deploy the latest youtube-dl
     # - python3.8 -m pip install --ignore-installed --prefix=/usr --root=$APPDIR install -U pyinstaller
-    - python3.8 -m pip install --ignore-installed --prefix=/usr --root=$APPDIR install mutagen pycryptodomex websockets brotli youtube-dl certifi
+    - python3.8 -m pip install --ignore-installed --prefix=/usr --root=$APPDIR install certifi
 
   runtime:
     env:
