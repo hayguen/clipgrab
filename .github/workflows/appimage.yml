@@ -22,6 +22,7 @@ jobs:
       #   run: sudo pip3 install appimage-builder
       - name: qmake and build
         run: |
+          rm -rf AppDir
           qmake clipgrab.pro
           make -j`nproc`
         env:

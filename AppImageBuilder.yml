@@ -43,8 +43,6 @@ AppDir:
       - libqt5widgets5
       - libqt5gui5
       - libqt5network5
-      - squashfs-tools
-      - ffmpeg
       - python3
       - xz-utils
       - tar
@@ -87,8 +85,6 @@ AppDir:
   after_bundle:
     # workaround libcrypt.so.2 binary still name as libcrypt.so.1 in debian systems
     - ln -fs /usr/lib/libcrypt.so.2 $APPDIR/usr/lib/libcrypt.so.1
-    # deploy the latest youtube-dl
-    # - python3.8 -m pip install --ignore-installed --prefix=/usr --root=$APPDIR install -U pyinstaller
     - python3.8 -m pip install --ignore-installed --prefix=/usr --root=$APPDIR install certifi
 
   runtime:

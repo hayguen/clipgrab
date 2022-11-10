@@ -1,0 +1,68 @@
+
+name: Upload Release Asset
+
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+
+jobs:
+  build-appimage:
+    name: Upload Release Asset
+
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: os info
+        run: lsb_release -a
+      - name: install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qt5-default qtdeclarative5-dev qtbase5-dev qttools5-dev-tools \
+            gettext build-essential g++ python3
+      - name: qmake and build
+        run: |
+          rm -rf AppDir
+          qmake clipgrab.pro
+          make -j`nproc`
+        env:
+          PREFIX: AppDir/usr/local
+      - name: install
+        run: make install
+      - name: Build / Pack AppImage
+        uses: docker://appimagecrafters/appimage-builder:0.8.4
+        with:
+          entrypoint: appimage-builder
+          args: --recipe ./AppImageBuilder.yml --skip-test
+      - name: list result
+        run: |
+          pwd
+          ls Clip*AppImage > assets.txt
+          cat assets.txt
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object,
+          # which include a `upload_url`. See this blog post for more info:
+          # https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ClipGrab-latest-x86_64.AppImage
+          asset_name: ClipGrab-latest-x86_64.AppImage
+          asset_content_type: application/octet-stream

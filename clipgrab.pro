@@ -11,6 +11,8 @@ QT += widgets
 QT += gui
 QT += network
 
+VERSION = 3.9.8
+
 CLIPGRAB_ORG_UPDATER = 0
 DEFINES += "HIDE_DONATION=1"
 
@@ -123,7 +125,6 @@ macx {
     QMAKE_INFO_PLIST = ClipGrab.plist
     LIBS += -framework AppKit -framework Foundation
 }
-VERSION = 3.9.6
 DEFINES += "CLIPGRAB_VERSION=$$VERSION"
 
 package.path = $$(PREFIX)/bin
