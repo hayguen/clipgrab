@@ -5,7 +5,7 @@ version: 1
 script:
   - apt-get update && apt-get install -y python3.8
   - mkdir -p AppDir/usr/share/icons/hicolor/80x80
-  - cp AppDir/usr/local/share/pixmaps/icon.png AppDir/usr/share/icons/hicolor/80x80/clipgrab.png
+  - mv AppDir/usr/local/share/pixmaps/icon.png AppDir/usr/share/icons/hicolor/80x80/clipgrab.png
 
 AppDir:
   path: AppDir
@@ -46,11 +46,6 @@ AppDir:
       - squashfs-tools
       - ffmpeg
       - python3
-      - build-essential
-      - python3-dev
-      - libpython3-dev
-      - libpython3.8-dev
-      - libffi7
       - xz-utils
       - tar
 
