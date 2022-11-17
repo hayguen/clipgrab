@@ -23,7 +23,16 @@
 
 #include "video.h"
 
-video::video() {
+static const int num_download_progress_reports = 100;   // => 1.0% steps on console with qDebug()
+
+video::video()
+: re_destination("^\\[download\\] Destination: (.+)")
+, re_downloaded("^\\[download\\] (.+?) has already been downloaded( and merged)?")
+, re_ffmpeg_merging("^\\[ffmpeg\\] Merging formats into \"([^\"]+)\"")
+, re_merger_merging("^\\[Merger\\] Merging formats into \"([^\"]+)\"")
+, re_ytdl_progress("^\\[download\\]\\s+(\\d+\\.\\d)%\\s+of\\s+~?\\s*(\\d+\\.\\d+)(T|G|M|K)iB")
+, re_error("ERROR:\\s+(.*)")
+{
     selectedQuality = -1;
     state = state::empty;
 
@@ -46,6 +55,7 @@ void video::startYoutubeDl(QStringList arguments) {
 
 void video::fetchPlaylistInfo(QString url) {
     if (state != state::empty) return;
+    qDebug() << "State fetching for '" << url << ".";
     state = state::fetching;
 
     this->url = url;
@@ -59,6 +69,7 @@ void video::fetchPlaylistInfo(QString url) {
 
 void video::fetchInfo(QString url) {
     if (state != state::empty) return;
+    qDebug() << "State fetching for '" << url << ".";
     state = state::fetching;
 
     // youtube-dl fails on YouTube links that include ?list parameter
@@ -84,6 +95,7 @@ void video::fetchInfo(QString url) {
 
 void video::download() {
     if ((state != state::fetched && state != state::paused && state != state::canceled) || selectedQuality <= -1) return;
+    qDebug() << "State downloading for '" << url << ".";
     state = state::downloading;
 
     videoQuality quality = qualities.at(selectedQuality);
@@ -112,12 +124,14 @@ void video::download() {
 
     arguments << url;
 
+    qDebug() << "starting download of '" << url << "' with parameters: " << arguments;
     startYoutubeDl(arguments);
 }
 
 void video::cancel() {
     if (state != state::downloading && state != state::paused) return;
 
+    qDebug() << "State canceling for '" << url << "' .. terminating ytdl!";
     state = state::canceling;
     if (youtubeDl != nullptr) youtubeDl->terminate();
 }
@@ -125,6 +139,7 @@ void video::cancel() {
 void video::pause() {
     if (state!= state::downloading) return;
 
+    qDebug() << "State pausing download of '" << url << "' .. terminating ytdl!";
     state = state::pausing;
     if (youtubeDl != nullptr) youtubeDl->terminate();
 }
@@ -132,12 +147,14 @@ void video::pause() {
 void video::resume() {
     if (state != state::paused) return;
 
+    qDebug() << "resuming download of '" << url << "' ..";
     download();
 }
 
 void video::restart() {
     if (state != state::canceled && state != state::error) return;
 
+    qDebug() << "restarting download of '" << url << "' ..";
     download();
 }
 
@@ -160,6 +177,7 @@ void video::handleInfoJson(QByteArray data) {
             playlistVideos << video;
         }
 
+        qDebug() << "State fetched info for '" << url << "'. title is '" << title << "'";
         state = state::fetched;
         return;
     } else if (json.value("_type").toString() == "url") {
@@ -171,6 +189,7 @@ void video::handleInfoJson(QByteArray data) {
             url = "https://www.youtube.com/watch?v=" + url;
         }
 
+        qDebug() << "State unfetched info for '" << url << "' !?";
         state = state::unfetched;
         return;
     }
@@ -310,41 +329,57 @@ void video::handleInfoJson(QByteArray data) {
         qualities << quality;
     }
 
+    qDebug() << "State fetched info for '" << url << "'.";
     state = state::fetched;
 }
 
 void video::handleDownloadInfo(QString line) {
-    qDebug() << line;
-    QRegularExpression re;
     QRegularExpressionMatch match;
+    line = line.trimmed();
 
-    re.setPattern("^\\[download\\] Destination: (.+)");
-    match = re.match(line);
+    // re.setPattern("^\\[download\\] Destination: (.+)");
+    match = re_destination.match(line);
     if (!match.captured(1).isNull()) {
         QString filename = match.captured(1);
         if (!downloadFilenames.contains(filename)) {
             downloadFilenames << match.captured(1);
             downloadSizeEstimates << 0;
         }
+        qDebug() << line;
+        qDebug() << "captured filename for '" << url << "': " << filename;
         return;
     }
 
-    re.setPattern("^\\[download\\] (.+?) has already been downloaded( and merged)?");
-    match = re.match(line);
+    // re.setPattern("^\\[download\\] (.+?) has already been downloaded( and merged)?");
+    match = re_downloaded.match(line);
     if (!match.captured(1).isNull()) {
         finalDownloadFilename = match.captured(1);
+        qDebug() << line;
+        qDebug() << "captured finalDownloadFilename for '" << url << "': " << finalDownloadFilename;
         return;
     }
-    re.setPattern("^\\[ffmpeg\\] Merging formats into \"([^\"]+)\"");
-    match = re.match(line);
+    // re.setPattern("^\\[Merger\\] Merging formats into \"([^\"]+)\"");
+    match = re_merger_merging.match(line);
     if (!match.captured(1).isNull()) {
         finalDownloadFilename = match.captured(1);
+        qDebug() << line;
+        qDebug() << "captured yt-dlp Merger finalDownloadFilename for '" << url << "': " << finalDownloadFilename;
+        return;
+    }
+    // re.setPattern("^\\[ffmpeg\\] Merging formats into \"([^\"]+)\"");
+    match = re_ffmpeg_merging.match(line);
+    if (!match.captured(1).isNull()) {
+        finalDownloadFilename = match.captured(1);
+        qDebug() << line;
+        qDebug() << "captured ffmpeg finalDownloadFilename for '" << url << "': " << finalDownloadFilename;
         return;
     }
 
-    re.setPattern("^\\[download\\]\\s+(\\d+\\.\\d)%\\s+of\\s+~?(\\d+\\.\\d+)(T|G|M|K)iB");
-    match = re.match(line);
-    if (match.hasMatch() && !downloadFilenames.isEmpty()) {
+    // re.setPattern("^\\[download\\]\\s+(\\d+\\.\\d)%\\s+of\\s+~?\\s*(\\d+\\.\\d+)(T|G|M|K)iB");
+    match = re_ytdl_progress.match(line);
+    const qint64 prev_downloadProgessPercent = (cachedDownloadProgress * num_download_progress_reports) / (cachedDownloadSize ? cachedDownloadSize : 1);
+    bool matchedLine = match.hasMatch();
+    if (matchedLine && !downloadFilenames.isEmpty()) {
         qint64 downloadProgress = 0;
         for (int i = 0; i < downloadFilenames.size(); i++) {
             downloadProgress += QFileInfo(downloadFilenames.at(i)).size();
@@ -354,6 +389,9 @@ void video::handleDownloadInfo(QString line) {
         if (downloadSize > 0 && downloadProgress > 0) {
             cachedDownloadSize = downloadSize;
             cachedDownloadProgress = downloadProgress;
+            const qint64 new_downloadProgessPercent = (cachedDownloadProgress * num_download_progress_reports) / (cachedDownloadSize ? cachedDownloadSize : 1);
+            if ( new_downloadProgessPercent > prev_downloadProgessPercent )
+                qDebug() << "download progress: " << new_downloadProgessPercent << ": " << line;
             emit downloadProgressChanged(downloadSize, downloadProgress);
         } else if (downloadProgress > 0) {
             QStringList prefixes {"K", "M", "G", "T"};
@@ -368,19 +406,27 @@ void video::handleDownloadInfo(QString line) {
             if (totalDownloadSizeEstimate > 0) {
                 cachedDownloadSize = totalDownloadSizeEstimate;
                 cachedDownloadProgress = downloadProgress;
+                const qint64 new_downloadProgessPercent = (cachedDownloadProgress * num_download_progress_reports) / (cachedDownloadSize ? cachedDownloadSize : 1);
+                if ( new_downloadProgessPercent > prev_downloadProgessPercent )
+                    qDebug() << "download progress: " << new_downloadProgessPercent << ": " << line;
                 emit downloadProgressChanged(totalDownloadSizeEstimate, downloadProgress);
             }
         }
     }
 
-    re.setPattern("ERROR:\\s+(.*)");
-    match = re.match(line);
+    // re.setPattern("ERROR:\\s+(.*)");
+    match = re_error.match(line);
     if (match.hasMatch()) {
         qDebug() << "ERROR!" << match.captured(1);
+        qDebug() << "State error: killing ytdl for '" << url << "': " << match.captured(1);
         state = state::error;
         emit stateChanged();
         youtubeDl->kill();
+        return;
     }
+
+    if ( !matchedLine )
+        qDebug() << "unmatched output: " << line;
 }
 
 bool video::setQuality(int index) {
@@ -483,11 +529,14 @@ void video::handleProcessFinished(int /*exitCode*/, QProcess::ExitStatus exitSta
 
             if (qualities.length() > 0) {
                 qDebug() << "Discovered video: " << title;
+                qDebug() << "State fetched - after normal exit - for '" << url << "'";
                 state = state::fetched;
             } else {
+                qDebug() << "State error from fetching - after normal exit - for '" << url << "'";
                 state = state::error;
             }
         } else {
+            qDebug() << "State error from fetching - after crash exit - for '" << url << "'";
             state = state::error;
         }
         emit stateChanged();
@@ -497,11 +546,13 @@ void video::handleProcessFinished(int /*exitCode*/, QProcess::ExitStatus exitSta
 
             if (finalDownloadFilename.isEmpty() && !downloadFilenames.empty()) finalDownloadFilename = downloadFilenames.last();
             if (finalDownloadFilename.isEmpty()) {
+                qDebug() << "State error from downloading - after normal exit of ytdl with empty filename for '" << url << "'";
                 state = state::error;
                 emit stateChanged();
                 return;
             }
 
+            qDebug() << "State converting from downloading - after normal exit of ytdl for '" << url << "'";
             state = state::converting;
             QFile* file = new QFile();
             file->setFileName(finalDownloadFilename);
@@ -510,16 +561,19 @@ void video::handleProcessFinished(int /*exitCode*/, QProcess::ExitStatus exitSta
                 targetConverterMode, this->audio_bitrate, this->audio_quality
                 );
         } else {
+            qDebug() << "State error from downloading - after crash exit of ytdl for '" << url << "'";
             state = state::error;
         }
         emit stateChanged();
         break;
     case state::pausing:
+        qDebug() << "State paused from pausing - after exit of ytdl for '" << url << "'";
         state = state::paused;
         emit stateChanged();
         return;
     case state::canceling:
         removeTempFiles();
+        qDebug() << "State canceled from canceling - after exit of ytdl for '" << url << "'";
         state = state::canceled;
         emit stateChanged();
         return;
@@ -546,11 +600,13 @@ void video::handleProcessReadyRead() {
 void video::handleConversionFinished() {
     removeTempFiles();
     finalFilename = targetConverter->target;
+    qDebug() << "conversion finished for '" << url << "'";
     state = state::finished;
     emit stateChanged();
 }
 
-void video::handleConversionError(QString /*error*/) {
+void video::handleConversionError(QString error) {
+    qDebug() << "conversion error for '" << url << "': " << error;
     state = state::error;
     emit stateChanged();
 }

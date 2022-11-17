@@ -134,6 +134,13 @@ protected:
 
     QList<video*> playlistVideos;
 
+    const QRegularExpression re_destination;
+    const QRegularExpression re_downloaded;
+    const QRegularExpression re_ffmpeg_merging;
+    const QRegularExpression re_merger_merging;
+    const QRegularExpression re_ytdl_progress;
+    const QRegularExpression re_error;
+
     void handleProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
     void handleProcessReadyRead();
     void handleInfoJson(QByteArray);

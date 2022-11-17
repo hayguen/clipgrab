@@ -11,7 +11,7 @@ QT += widgets
 QT += gui
 QT += network
 
-VERSION = 3.9.8
+VERSION = 3.9.9
 
 CLIPGRAB_ORG_UPDATER = 0
 DEFINES += "HIDE_DONATION=1"
