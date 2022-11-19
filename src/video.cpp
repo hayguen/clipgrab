@@ -42,6 +42,9 @@ video::video()
     cachedDownloadSize = 0;
     cachedDownloadProgress = 0;
     audioOnly = false;
+
+    QSettings settings;
+    verbose = settings.value("verbose", false).toBool();
 }
 
 void video::startYoutubeDl(QStringList arguments) {
@@ -210,22 +213,25 @@ void video::handleInfoJson(QByteArray data) {
 
     duration = json.value("duration").toDouble();
 
+    qDebug() << "\nfetched infos for " << title << "  id " << id;
+
     QJsonArray formats = json.value("formats").toArray();
     QList<QJsonObject> videoFormats;
     QList<QJsonObject> audioFormats;
-    QStringList acceptedExts = {"mp4", "m4a"};
-    if (QSettings().value("UseWebM", false).toBool()) {
-        acceptedExts << "webm" << "opus";
-    }
+    // QStringList acceptedExts = {"mp4", "m4a"};
+    // if (QSettings().value("UseWebM", false).toBool()) {
+    //    acceptedExts << "webm" << "opus";
+    // }
     for (int i = 0; i < formats.size(); i++) {
         QJsonObject format = formats.at(i).toObject();
-        if (acceptedExts.contains(format.value("ext").toString())) {
+        // accept ALL formats!
+        // if (acceptedExts.contains(format.value("ext").toString())) {
             if (format.value("vcodec").toString() == "none") {
                 audioFormats << format;
             } else {
                 videoFormats << format;
             }
-        }
+        //}
     }
 
     // Sort audio formats by bitrate
@@ -265,6 +271,7 @@ void video::handleInfoJson(QByteArray data) {
     });
 
     // Remove duplicates
+    if (false)  // keep duplicates - probably with different externsion
     videoFormats.erase(
         std::unique(videoFormats.begin(), videoFormats.end(), [](QJsonObject a, QJsonObject b) {
             int heightA = a.value("height").toInt();
@@ -281,14 +288,18 @@ void video::handleInfoJson(QByteArray data) {
     for (int i = 0; i < videoFormats.size(); i ++) {
         QJsonObject videoFormat = videoFormats.at(i);
         int height = videoFormat.value("height").toInt();
+        int width = videoFormat.value("width").toInt();
         QRegularExpression heightExp("^(\\d+)p");
         QRegularExpressionMatch match = heightExp.match(videoFormat.value("format_note").toString());
         if (match.hasMatch()) height = match.captured(1).toInt();
         int fps = videoFormat.value("fps").toInt();
 
         QString name = QString::number(height) + "p";
+        if (width)
+            name = QString::number(width) + "x" + name;
         if (name == "0p") name = tr("unknown");
-        else if (fps >= 59) name.append("60");
+        else // if (fps >= 59) name.append("60");
+            name.append(QString::number(fps));
 
         if (height >= 4000) {
             name.append(" (8K)");
@@ -298,15 +309,23 @@ void video::handleInfoJson(QByteArray data) {
             name.append(" (HD)");
         }
 
-        if (videoFormat.value("ext").toString() == "webm") {
-            name.append(" WebM");
-        }
+        QString extStr = videoFormat.value("ext").toString().trimmed();
+        // if (extStr == "webm") {
+        //     name.append(" WebM");
+        // }
+        name.append(" ");
+        name.append(extStr);
 
         videoQuality quality(name, videoFormat.value("format_id").toString());
         quality.resolution = height;
         quality.videoFileSize = videoFormat.value("filesize").toInt();
         quality.audioFileSize = 0;
         quality.containerName = videoFormat.value("ext").toString();
+
+        qDebug()
+                << "format " << i << "/" << videoFormats.size() << ":" << name << "resolution " << width << "x" << height << " fps " << fps
+            << "\n  container ext " << videoFormat.value("ext").toString()
+            << "  format " << videoFormat.value("format_id").toString();
 
         QList<QJsonObject> compatibleAudioFormats(audioFormats);
         QStringList compatibleAudioExts = {"aac", "m4a"};
@@ -329,7 +348,7 @@ void video::handleInfoJson(QByteArray data) {
         qualities << quality;
     }
 
-    qDebug() << "State fetched info for '" << url << "'.";
+    qDebug() << "\nState fetched info for '" << url << "'.";
     state = state::fetched;
 }
 
@@ -524,7 +543,29 @@ void video::handleProcessFinished(int /*exitCode*/, QProcess::ExitStatus exitSta
     switch (state) {
     case state::fetching:
         if (exitStatus == QProcess::ExitStatus::NormalExit) {
-            handleInfoJson(youtubeDl->readAllStandardOutput());
+            QByteArray out = youtubeDl->readAllStandardOutput();
+            if (verbose) {
+                // make the JSON readable
+                QString all_lines = QString(out);
+                all_lines = all_lines.replace("{", "{\n");
+                all_lines = all_lines.replace("[", "[\n");
+                all_lines = all_lines.replace("\"}", "\"\n}");
+                all_lines = all_lines.replace("\",", "\",\n");
+                QFile infos("video_info.json");
+                if ( infos.open(QIODevice::WriteOnly | QIODevice::Text) ) {
+                    infos.write(all_lines.toUtf8());
+                    infos.close();
+                }
+                QByteArray errs = youtubeDl->readAllStandardError();
+                if (errs.size()) {
+                    QFile err_file("video_info_errors.txt");
+                    if ( err_file.open(QIODevice::WriteOnly | QIODevice::Text) ) {
+                        err_file.write(errs);
+                        err_file.close();
+                    }
+                }
+            }
+            handleInfoJson(out);
             youtubeDl->close();
 
             if (qualities.length() > 0) {

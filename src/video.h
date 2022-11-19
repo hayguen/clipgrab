@@ -125,6 +125,7 @@ protected:
     video::state state;
 
     bool audioOnly;
+    bool verbose;
     converter* targetConverter;
     int targetConverterMode;
     QString targetFilename;

@@ -48,6 +48,8 @@ int main(int argc, char *argv[])
     parser.addHelpOption();
     QCommandLineOption startMinimizedOption(QStringList() << "start-minimized", "Hide the ClipGrab window on launch");
     parser.addOption(startMinimizedOption);
+    QCommandLineOption verboseOption(QStringList() << "verbose", "Print verbose output");
+    parser.addOption(verboseOption);
 #if CLIPGRAB_ORG_UPDATER
     QCommandLineOption suppress_update_option(QStringList() << "no-update", "Suppress update checking");
     QCommandLineOption perform_update_option(QStringList() << "update", "Check for updates");
@@ -90,6 +92,9 @@ int main(int argc, char *argv[])
             break;
         }
     }
+
+    bool verbose = parser.isSet(verboseOption);
+    settings.setValue("verbose", verbose);
 
     MainWindow w(cg);
     w.init();

@@ -130,7 +130,7 @@ private slots:
     void on_mainTab_currentChanged(int index);
     void on_downloadComboFormat_currentIndexChanged(int index);
     void on_settingsUseMetadata_stateChanged(int );
-    void on_label_linkActivated(QString link);
+    void on_label_status_version_linkActivated(QString link);
     void on_downloadLineEdit_returnPressed();
     void on_settingsMinimizeToTray_stateChanged(int );
     void on_downloadPause_clicked();
@@ -154,7 +154,6 @@ private slots:
     void handleFinishedConversion(video*);
     void on_settingsLanguage_currentIndexChanged(int index);
     void on_buttonDonate_clicked();
-    void on_settingsUseWebM_toggled(bool checked);
     void on_settingsIgnoreSSLErrors_toggled(bool checked);
     void on_downloadTree_customContextMenuRequested(const QPoint &pos);
     void on_settingsRememberLogins_toggled(bool checked);

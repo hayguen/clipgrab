@@ -165,7 +165,6 @@ void MainWindow::init()
         ui.settingsRadioNotificationsNever->setChecked(true);
     }
 
-      ui.settingsUseWebM->setChecked(cg->settings.value("UseWebM", false).toBool());
       ui.settingsRememberVideoQuality->setChecked(cg->settings.value("rememberVideoQuality", true).toBool());
       ui.settingsRememberLogins->hide();
 //    ui.settingsRememberLogins->setChecked(cg->settings.value("rememberLogins", true).toBool());
@@ -755,7 +754,7 @@ void MainWindow::on_downloadLineEdit_returnPressed() {
     startDownload();
 }
 
-void MainWindow::on_label_linkActivated(QString link)
+void MainWindow::on_label_status_version_linkActivated(QString link)
 {
     QDesktopServices::openUrl(link);
 }
@@ -783,11 +782,6 @@ void MainWindow::on_settingsLanguage_currentIndexChanged(int index)
 void MainWindow::on_buttonDonate_clicked()
 {
     QDesktopServices::openUrl(QUrl("https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=AS6TDMR667GJL"));
-}
-
-void MainWindow::on_settingsUseWebM_toggled(bool checked)
-{
-    cg->settings.setValue("UseWebM", checked);
 }
 
 void MainWindow::on_settingsIgnoreSSLErrors_toggled(bool checked)
