@@ -469,18 +469,31 @@ void MainWindow::handleCurrentVideoStateChanged(video* video) {
     ui.downloadComboQuality->clear();
     QList<videoQuality> qualities = video->getQualities();
     for (int i = 0; i < qualities.size(); i++) {
-        ui.downloadComboQuality->addItem(qualities.at(i).name, qualities.at(i).resolution);
+        QString reso_ext = QString("%1;;%2").arg(qualities.at(i).resolution).arg(qualities.at(i).containerName);
+        ui.downloadComboQuality->addItem(qualities.at(i).name, reso_ext);
     }
 
     if (cg->settings.value("rememberVideoQuality", true).toBool()) {
-        int rememberedResolution = cg->settings.value("rememberedVideoQuality", -1).toInt();
+        const int rememberedResolution = cg->settings.value("rememberedVideoQuality", -1).toInt();
+        const QString rememberedContainer = cg->settings.value("rememberedVideoContainer", "").toString();
         int bestResolutionMatch = 0;
         int bestResolutionMatchPosition = 0;
         for (int i = 0; i < qualities.length(); i++) {
-            int resolution = qualities.at(i).resolution;
+            const int resolution = qualities.at(i).resolution;
             if (resolution <= rememberedResolution && resolution > bestResolutionMatch) {
                 bestResolutionMatch = resolution;
+            }
+        }
+        QList<int> best_qualities;
+        for (int i = 0; i < qualities.length(); i++) {
+            if ( qualities.at(i).resolution == bestResolutionMatch )
+                best_qualities.append(i);
+        }
+        bestResolutionMatchPosition = ( best_qualities.size() ? best_qualities.at(0) : 0 );
+        for (const int i : best_qualities) {
+            if ( qualities.at(i).containerName == rememberedContainer ) {
                 bestResolutionMatchPosition = i;
+                break;
             }
         }
         ui.downloadComboQuality->setCurrentIndex(bestResolutionMatchPosition);
@@ -1075,7 +1088,19 @@ void MainWindow::on_downloadComboQuality_currentIndexChanged(int index)
         return;
     }
 
-    cg->settings.setValue("rememberedVideoQuality", ui.downloadComboQuality->itemData(index, Qt::UserRole).toInt());
+    QString reso_ext = ui.downloadComboQuality->itemData(index, Qt::UserRole).toString();
+    QStringList lst = reso_ext.split(";;");
+    int reso = 0;
+    QString ext;
+    if ( lst.size() == 2 ) {
+        reso = lst.at(0).toInt();
+        ext = lst.at(1);
+    }
+    else if (lst.size() <= 1)
+        reso = reso_ext.toInt();
+
+    cg->settings.setValue("rememberedVideoQuality", reso);
+    cg->settings.setValue("rememberedVideoContainer", ext);
 }
 
 void MainWindow::on_downloadTree_doubleClicked(const QModelIndex &index)
