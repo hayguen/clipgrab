@@ -33,6 +33,19 @@ const char * converter_ffmpeg::homepage_short = "github.com/BtbN/FFmpeg-Builds";
 const char * converter_ffmpeg::releases = "https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/latest";
 
 
+ffmpegThread::ffmpegThread(converter_ffmpeg * _converter)
+    : re_duration("^DURATION\\s+:\\s+(\\d\\d):(\\d\\d):(\\d\\d.?\\d*)\\s*$")
+    , re_progress("^frame=\\s*\\d+\\s+fps=\\d+.?\\d*\\s+q=\\d+.?\\d*\\s+L?size=\\s*\\d+\\w+\\s+time=(\\d\\d):(\\d\\d):(\\d\\d.?\\d*)\\s+")
+    , duration_s(-1.0)
+    , progress_s(-1.0)
+    , progress_percent(-1.0)
+    , progress_permille(-1)
+{
+    // "DURATION        : 01:02:21.820000000"
+    // "frame= 3116 fps=778 q=3.1 size=    4352kB time=00:02:10.41 bitrate= 273.4kbits/s speed=32.6x"
+    converter = _converter;
+}
+
 void ffmpegThread::run()
 {
     QSettings settings;
@@ -228,13 +241,77 @@ void ffmpegThread::run()
         ffmpegCall = ffmpegCall + " \"" + target + "\"";
     }
 
-    qDebug() << "Executing ffmpeg: " << ffmpegCall;
+    qDebug().quote() << "Executing ffmpeg: " << ffmpegCall;
 
     ffmpeg = new QProcess(parent);
+    duration_s = -1.0;
+    progress_s = -1.0;
+    progress_percent = 0.0;
+    progress_permille = 0;
+    auto readLines = [=](bool is_stdout) {
+        ffmpeg->setReadChannel(is_stdout ? QProcess::StandardOutput : QProcess::StandardError);
+        while (true)
+        {
+            QByteArray rd = ffmpeg->readLine();
+            if (!rd.size())
+                break;
+            QString line = QString::fromLocal8Bit(rd).trimmed();
+
+            if ( duration_s < 0.0 ) {
+                QRegularExpressionMatch match = re_duration.match(line);
+                if (match.hasMatch()) {
+                    bool h_ok, m_ok, s_ok;
+                    int hours = match.captured(1).toInt(&h_ok);
+                    int mins = match.captured(2).toInt(&m_ok);
+                    double secs = match.captured(3).toDouble(&s_ok);
+                    if ( h_ok && m_ok && s_ok
+                        && hours >= 0 && hours <= 24
+                        && mins >= 0 && mins <= 60
+                        && secs >= 0.0 && secs <= 60.0
+                        && hours * 60.0 * 60.0 + mins * 60.0 + secs > 0.0
+                        ) {
+                        duration_s = hours * 60.0 * 60.0 + mins * 60.0 + secs;
+                        qDebug().noquote() << "video duration to convert: " << QString::number(duration_s, 'f', 1) << " sec";
+                        continue;
+                    }
+                }
+            }
+            else
+            {
+                QRegularExpressionMatch match = re_progress.match(line);
+                if (match.hasMatch()) {
+                    bool h_ok, m_ok, s_ok;
+                    int hours = match.captured(1).toInt(&h_ok);
+                    int mins = match.captured(2).toInt(&m_ok);
+                    double secs = match.captured(3).toDouble(&s_ok);
+                    if ( h_ok && m_ok && s_ok && hours >= 0 && hours <= 24 && mins >= 0 && mins <= 60 && secs >= 0.0 && secs <= 60.0 ) {
+                        progress_s = hours * 60.0 * 60.0 + mins * 60.0 + secs;
+                        progress_percent = progress_s * 100.0 / duration_s;
+                        int per_mille = int(progress_percent * 10.0 + 0.5);
+                        if (progress_permille < per_mille) {
+                            progress_permille = per_mille;
+                            //qDebug().noquote() << "conversion progress: " << QString::number(progress_s, 'f', 1) << "sec:" << QString::number(progress_percent, 'f', 1) << "%";
+                            emit converter->progress(progress_percent);
+                        }
+                        continue;
+                    }
+                }
+            }
+
+            if (is_stdout)
+                qDebug().noquote() << "ffmpeg stdout: " << line;
+            else
+                qDebug().noquote() << "ffmpeg stderr: " << line;
+        }
+    };
+    connect(ffmpeg , &QProcess::readyReadStandardOutput, this, [=]() {
+        readLines(true);
+    });
+    connect(ffmpeg , &QProcess::readyReadStandardError, this, [=]() {
+        readLines(false);
+    });
     ffmpeg->start(ffmpegCall);
     ffmpeg->waitForFinished(-1);
-    qDebug() << ffmpeg->readAllStandardError();
-    qDebug() << ffmpeg->readAllStandardOutput();
     ffmpeg->close();
 
     // patch added for Qt Version 4.5.0 by Günther Bauer
@@ -245,6 +322,7 @@ void ffmpegThread::run()
 };
 
 converter_ffmpeg::converter_ffmpeg()
+    : ffmpeg(this)
 {
     QSettings settings;
     this->_modes.append(tr("MPEG4"));

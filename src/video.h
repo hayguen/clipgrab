@@ -92,6 +92,7 @@ public:
     virtual state getState() {return state;};
     virtual qint64 getDownloadSize();
     virtual qint64 getDownloadProgress();
+    double getConversionProgress() const { return conversion_progress; }
 
     virtual QList<video*> getPlaylistVideos();
 
@@ -123,6 +124,7 @@ protected:
     QProcess* youtubeDl;
     void startYoutubeDl(QStringList);
     video::state state;
+    double conversion_progress;
 
     bool audioOnly;
     bool verbose;
@@ -147,6 +149,7 @@ protected:
     void handleInfoJson(QByteArray);
     void handleDownloadInfo(QString line);
     void handleConversionFinished();
+    void handleConversionProgress(double progress);
     void handleConversionError(QString);
     void removeTempFiles();
 

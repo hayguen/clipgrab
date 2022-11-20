@@ -28,9 +28,13 @@
 #include <QSysInfo>
 #include <QApplication>
 
+
+class converter_ffmpeg;
+
 class ffmpegThread : public QThread
 {
-    public:
+public:
+    ffmpegThread(converter_ffmpeg * _converter);
     QFile* inputFile;
     QString target;
     QString container;
@@ -50,6 +54,14 @@ class ffmpegThread : public QThread
 
     void run();
 
+private:
+    converter_ffmpeg * converter;
+    const QRegularExpression re_duration;
+    const QRegularExpression re_progress;
+    double duration_s;
+    double progress_s;
+    double progress_percent;
+    int progress_permille;
 };
 
 class converter_ffmpeg : public converter

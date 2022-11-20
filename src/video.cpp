@@ -35,6 +35,7 @@ video::video()
 {
     selectedQuality = -1;
     state = state::empty;
+    conversion_progress = -1.0;
 
     youtubeDl = nullptr;
 
@@ -476,6 +477,7 @@ void video::setConverter(converter* targetConverter, int targetConverterMode, QS
     this->audio_quality = audio_quality;
 
     connect(this->targetConverter, &converter::conversionFinished, this, &video::handleConversionFinished);
+    connect(this->targetConverter, &converter::progress, this, &video::handleConversionProgress);
     connect(this->targetConverter, &converter::error, this, &video::handleConversionError);
 }
 
@@ -656,6 +658,12 @@ void video::handleConversionFinished() {
     finalFilename = targetConverter->target;
     qDebug() << "conversion finished for '" << url << "'";
     state = state::finished;
+    emit stateChanged();
+}
+
+void video::handleConversionProgress(double progress)
+{
+    conversion_progress = progress;
     emit stateChanged();
 }
 

@@ -54,8 +54,9 @@ public:
     QString target;
 
 signals:
-        void conversionFinished();
-        void error(QString);
+    void conversionFinished();
+    void progress(double percent);
+    void error(QString);
 
 protected:
         QList<QString> _modes;

@@ -16,7 +16,6 @@ DownloadListModel::DownloadListModel(ClipGrab* cg, QObject *parent)
             }
         });
 
-
         connect(cg->downloads.last(), &video::stateChanged, [=] {
             int row = cg->downloads.size() - cg->downloads.indexOf(video) - 1;
             if (row < cg->downloads.size()) {
@@ -102,8 +101,14 @@ QVariant DownloadListModel::data(const QModelIndex &index, int role) const {
             if (percentage == "100.0") percentage = "99.9";
             return percentage + QChar(0x2009) + "%(" + cg->humanizeBytes(downloadProgress) + "/" + cg->humanizeBytes(downloadSize) + ")";
         }
-        case video::state::converting:
-            return tr("Converting ...");
+        case video::state::converting: {
+            double progress = video->getConversionProgress();
+            if ( progress <= 0 )
+                return tr("Converting ...");
+            QString percentage = QString::number(progress, 'f', 1);
+            if (percentage == "100.0") percentage = "99.9";
+            return percentage + QChar(0x2009) + "% " + tr("Converting ...");
+        }
         case video::state::finished:
             return tr("Finished");
         case video::state::paused:
