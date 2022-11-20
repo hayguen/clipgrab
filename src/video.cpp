@@ -75,7 +75,9 @@ void video::fetchInfo(QString url) {
     qDebug() << "State fetching for '" << url << ".";
     state = state::fetching;
 
+#if 0
     // youtube-dl fails on YouTube links that include ?list parameter
+    // looks, yt-dlp doesn't fail
     QUrl parsedUrl = QUrl(url);
     if (parsedUrl.host() == "www.youtube.com" && parsedUrl.path() == "/watch") {
         QString v = QUrlQuery(parsedUrl.query()).queryItemValue("v");
@@ -85,6 +87,7 @@ void video::fetchInfo(QString url) {
         QString v = parsedUrl.path();
         parsedUrl.setUrl("https://www.youtube.com/watch?v=" + v);
     }
+#endif
 
     this->url = url;
 
@@ -93,6 +96,7 @@ void video::fetchInfo(QString url) {
     arguments << "--no-playlist";
     arguments << url;
 
+    qDebug() << "check/retrieve URL " << url;
     startYoutubeDl(arguments);
 }
 
@@ -545,19 +549,28 @@ void video::handleProcessFinished(int /*exitCode*/, QProcess::ExitStatus exitSta
         if (exitStatus == QProcess::ExitStatus::NormalExit) {
             QByteArray out = youtubeDl->readAllStandardOutput();
             if (verbose) {
-                // make the JSON readable
-                QString all_lines = QString(out);
-                all_lines = all_lines.replace("{", "{\n");
-                all_lines = all_lines.replace("[", "[\n");
-                all_lines = all_lines.replace("\"}", "\"\n}");
-                all_lines = all_lines.replace("\",", "\",\n");
-                QFile infos("video_info.json");
-                if ( infos.open(QIODevice::WriteOnly | QIODevice::Text) ) {
-                    infos.write(all_lines.toUtf8());
-                    infos.close();
+                if (!out.size()) {
+                    // make the JSON readable
+                    QString all_lines = QString::fromUtf8(out);
+                    all_lines = all_lines.replace("{", "{\n");
+                    all_lines = all_lines.replace("[", "[\n");
+                    all_lines = all_lines.replace("\"}", "\"\n}");
+                    all_lines = all_lines.replace("\",", "\",\n");
+                    QFile infos("video_info.json");
+                    if ( infos.open(QIODevice::WriteOnly | QIODevice::Text) ) {
+                        infos.write(all_lines.toUtf8());
+                        infos.close();
+                        qDebug() << "wrote video_info.json";
+                    }
                 }
-                QByteArray errs = youtubeDl->readAllStandardError();
-                if (errs.size()) {
+            }
+            QByteArray errs = youtubeDl->readAllStandardError();
+            if (errs.size()) {
+                qDebug() << "Error fetching video infos:";
+                const QStringList lines = QString::fromUtf8(errs).split("\n");
+                for (const QString &ln : lines)
+                    qDebug() << ln.trimmed();
+                if (verbose) {
                     QFile err_file("video_info_errors.txt");
                     if ( err_file.open(QIODevice::WriteOnly | QIODevice::Text) ) {
                         err_file.write(errs);

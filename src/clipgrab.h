@@ -134,7 +134,8 @@ class ClipGrab : public QObject
     QList<converter*> converters;
     QSettings settings;
     QSystemTrayIcon trayIcon;
-    bool isKnownVideoUrl(QString url);
+    bool isKnownVideoUrl(QString url) const;
+    bool isUrl(QString url) const;
     QClipboard* clipboard;
     QString clipboardUrl;
     QString version;
@@ -192,6 +193,8 @@ class ClipGrab : public QObject
         converter_ffmpeg * conv_ffmpeg;
         QString ffmpegPath_;
         QString ffmpegVersion_;
+        QList<QRegularExpression> re_video_urls;
+        const QRegularExpression re_is_url;
 
     private slots:
 #if CLIPGRAB_ORG_UPDATER
@@ -230,6 +233,7 @@ class ClipGrab : public QObject
         void youtubeDlDownloadFinished();
         void FFmpegDownloadFinished(QString filePath);
         void compatibleUrlFoundInClipboard(QString url);
+        void UrlFoundInClipboard(QString url);
         void allDownloadsCanceled();
 #if CLIPGRAB_ORG_UPDATER
         void updateInfoProcessed();

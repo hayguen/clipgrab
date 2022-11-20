@@ -87,6 +87,7 @@ public slots:
     void activate_format_cb();
     void activate_quality_cb();
     void compatibleUrlFoundInClipBoard(QString url);
+    void UrlFoundInClipBoard(QString url);
     void targetFileSelected(video* video, QString target);
 
 private:

@@ -30,6 +30,7 @@ const char * ClipGrab::homepage_short = "github.com/hayguen/clipgrab";
 
 
 ClipGrab::ClipGrab()
+    : re_is_url("^http[s]?://")
 {
     helperDownloaderDialog = NULL;
 
@@ -220,6 +221,19 @@ ClipGrab::ClipGrab()
             updateFile.remove();
         }
     }
+
+    re_video_urls << QRegularExpression("^http[s]?://\\w*\\.dailymotion\\.com/video/([^?/]+)");
+    re_video_urls << QRegularExpression("^http[s]?://dai\\.ly/([^?/]+)");
+    re_video_urls << QRegularExpression("^(http[s]?://(www\\.)?facebook\\.com.*/videos).*/(\\d+)");
+    re_video_urls << QRegularExpression("^http[s]?://(www\\.)?facebook\\.com.*/(?:pg/)?.*/videos/.*");
+    re_video_urls << QRegularExpression("^http[s]?://(www\\.)?vimeo\\.com/(groups/[a-z0-9]+/videos/)?([0-9]+)");
+    re_video_urls << QRegularExpression("^http[s]?://(player.)vimeo\\.com/video/([0-9]+)");
+    re_video_urls << QRegularExpression("^http[s]?://\\w*\\.youtube\\.com/watch.*v\\=.*");
+    re_video_urls << QRegularExpression("^http[s]?://\\w*\\.youtube\\.com/view_play_list\\?p\\=.*&v\\=.*");
+    re_video_urls << QRegularExpression("^http[s]?://youtu.be/.*");
+    re_video_urls << QRegularExpression("^http[s]?://w*\\.youtube\\.com/embed/.*");
+    re_video_urls << QRegularExpression("^https://www\\.ardmediathek\\.de/ard/video/.*");
+    re_video_urls << QRegularExpression("^https://www\\.zdf\\.de/.*-\\d+\\.html");
 
     //*
     //* Miscellaneous
@@ -975,6 +989,10 @@ void ClipGrab::clipboardChanged() {
         this->clipboardUrl = url;
         emit compatibleUrlFoundInClipboard(url);
     }
+    else if (isUrl(url)) {
+        this->clipboardUrl = url;
+        emit UrlFoundInClipboard(url);
+    }
 }
 
 int ClipGrab::getRunningDownloadsCount() {
@@ -1017,28 +1035,17 @@ void ClipGrab::activateProxySettings() {
     }
 }
 
-bool ClipGrab::isKnownVideoUrl(QString url) {
-    QList<QRegularExpression> res;
-
-    res << QRegularExpression("^http[s]?://\\w*\\.dailymotion\\.com/video/([^?/]+)");
-    res << QRegularExpression("^http[s]?://dai\\.ly/([^?/]+)");
-    res << QRegularExpression("^(http[s]?://(www\\.)?facebook\\.com.*/videos).*/(\\d+)");
-    res << QRegularExpression("^http[s]?://(www\\.)?facebook\\.com.*/(?:pg/)?.*/videos/.*");
-    res << QRegularExpression("^http[s]?://(www\\.)?vimeo\\.com/(groups/[a-z0-9]+/videos/)?([0-9]+)");
-    res << QRegularExpression("^http[s]?://(player.)vimeo\\.com/video/([0-9]+)");
-    res << QRegularExpression("^http[s]?://\\w*\\.youtube\\.com/watch.*v\\=.*");
-    res << QRegularExpression("^http[s]?://\\w*\\.youtube\\.com/view_play_list\\?p\\=.*&v\\=.*");
-    res << QRegularExpression("^http[s]?://youtu.be/.*");
-    res << QRegularExpression("^http[s]?://w*\\.youtube\\.com/embed/.*");
-    res << QRegularExpression("^https://www\\.ardmediathek\\.de/ard/video/.*");
-    res << QRegularExpression("^https://www\\.zdf\\.de/.*-\\d+\\.html");
-
-    return std::any_of(res.begin(), res.end(), [=](QRegularExpression re) {
+bool ClipGrab::isKnownVideoUrl(QString url) const {
+    return std::any_of(re_video_urls.begin(), re_video_urls.end(), [=](QRegularExpression re) {
         QRegularExpressionMatch match = re.match(url);
         return match.hasMatch();
     });
 }
 
+bool ClipGrab::isUrl(QString url) const {
+    QRegularExpressionMatch match = re_is_url.match(url);
+    return match.hasMatch();
+}
 
 void ClipGrab::openTargetFolder(video *video)
 {

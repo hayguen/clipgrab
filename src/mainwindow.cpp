@@ -62,19 +62,20 @@ void MainWindow::init()
     //*
     systemTrayIcon.setIcon(QIcon(":/img/icon.png"));
     systemTrayIcon.show();
-    connect(&systemTrayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(systemTrayIconActivated(QSystemTrayIcon::ActivationReason)));
-    connect(&systemTrayIcon, SIGNAL(messageClicked()), this, SLOT(systemTrayMessageClicked()));
+    connect(&systemTrayIcon, &QSystemTrayIcon::activated, this, &MainWindow::systemTrayIconActivated);
+    connect(&systemTrayIcon, &QSystemTrayIcon::messageClicked, this, &MainWindow::systemTrayMessageClicked);
 
     //*
     //* Clipboard Handling
     //*
-    connect(cg, SIGNAL(compatibleUrlFoundInClipboard(QString)), this, SLOT(compatibleUrlFoundInClipBoard(QString)));
+    connect(cg, &ClipGrab::compatibleUrlFoundInClipboard, this, &MainWindow::compatibleUrlFoundInClipBoard );
+    connect(cg, &ClipGrab::UrlFoundInClipboard, this, &MainWindow::UrlFoundInClipBoard );
 
     //*
     //* Download Tab
     //*
-    connect(ui.downloadStart, SIGNAL(clicked()), this, SLOT(startDownload()));
-    connect(ui.downloadLineEdit, &QLineEdit::textChanged, [=](const QString url) {
+    connect(ui.downloadStart, &QPushButton::clicked, this, &MainWindow::startDownload);
+    connect(ui.downloadLineEdit, &QLineEdit::textChanged, this, [=](const QString url) {
         if (!url.startsWith("http://") && !url.startsWith("https://")) return;
 
         ui.downloadLineEdit->setReadOnly(true);
@@ -84,7 +85,7 @@ void MainWindow::init()
     });
     connect(cg, &ClipGrab::currentVideoStateChanged, this, &MainWindow::handleCurrentVideoStateChanged);
 
-    connect(ui.copy_from_clip, &QPushButton::clicked, [=]() {
+    connect(ui.copy_from_clip, &QPushButton::clicked, this, [=]() {
         ui.downloadLineEdit->setText( ui.clipboard_content->text() );
     });
 
@@ -102,12 +103,12 @@ void MainWindow::init()
     //*
     //* Settings Tab
     //*
-    connect(this->ui.settingsRadioClipboardAlways, SIGNAL(toggled(bool)), this, SLOT(settingsClipboard_toggled(bool)));
-    connect(this->ui.settingsRadioClipboardNever, SIGNAL(toggled(bool)), this, SLOT(settingsClipboard_toggled(bool)));
-    connect(this->ui.settingsRadioClipboardAsk, SIGNAL(toggled(bool)), this, SLOT(settingsClipboard_toggled(bool)));
-    connect(this->ui.settingsRadioNotificationsAlways, SIGNAL(toggled(bool)), this, SLOT(settingsNotifications_toggled(bool)));
-    connect(this->ui.settingsRadioNotificationsFinish, SIGNAL(toggled(bool)), this, SLOT(settingsNotifications_toggled(bool)));
-    connect(this->ui.settingsRadioNotificationsNever, SIGNAL(toggled(bool)), this, SLOT(settingsNotifications_toggled(bool)));
+    connect(this->ui.settingsRadioClipboardAlways, &QRadioButton::toggled, this, &MainWindow::settingsClipboard_toggled);
+    connect(this->ui.settingsRadioClipboardNever, &QRadioButton::toggled, this, &MainWindow::settingsClipboard_toggled);
+    connect(this->ui.settingsRadioClipboardAsk, &QRadioButton::toggled, this, &MainWindow::settingsClipboard_toggled);
+    connect(this->ui.settingsRadioNotificationsAlways, &QRadioButton::toggled, this, &MainWindow::settingsNotifications_toggled);
+    connect(this->ui.settingsRadioNotificationsFinish, &QRadioButton::toggled, this, &MainWindow::settingsNotifications_toggled);
+    connect(this->ui.settingsRadioNotificationsNever, &QRadioButton::toggled, this, &MainWindow::settingsNotifications_toggled);
 
 
     this->ui.settingsSavedPath->setText(cg->settings.value("savedPath", QStandardPaths::writableLocation(QStandardPaths::DesktopLocation)).toString());
@@ -119,7 +120,7 @@ void MainWindow::init()
     this->ui.settingsAudioQuality->setText(audio_quality);
 
     ui.settingsUseMetadata->setChecked(cg->settings.value("UseMetadata", false).toBool());
-    connect(this->ui.settingsUseMetadata, SIGNAL(stateChanged(int)), this, SLOT(on_settingsUseMetadata_stateChanged(int)));
+    connect(this->ui.settingsUseMetadata, &QCheckBox::stateChanged, this, &MainWindow::on_settingsUseMetadata_stateChanged);
 
     ui.settingsUseProxy->setChecked(cg->settings.value("UseProxy", false).toBool());
     ui.settingsProxyAuthenticationRequired->setChecked(cg->settings.value("ProxyAuthenticationRequired", false).toBool());
@@ -129,12 +130,12 @@ void MainWindow::init()
     ui.settingsProxyUsername->setText(cg->settings.value("ProxyUsername", "").toString());
     ui.settingsProxyType->setCurrentIndex(cg->settings.value("ProxyType", 0).toInt());
 
-    connect(this->ui.settingsUseProxy, SIGNAL(toggled(bool)), this, SLOT(settingsProxyChanged()));
-    connect(this->ui.settingsProxyAuthenticationRequired, SIGNAL(toggled(bool)), this, SLOT(settingsProxyChanged()));
-    connect(this->ui.settingsProxyHost, SIGNAL(textChanged(QString)), this, SLOT(settingsProxyChanged()));
-    connect(this->ui.settingsProxyPassword, SIGNAL(textChanged(QString)), this, SLOT(settingsProxyChanged()));
+    connect(this->ui.settingsUseProxy, &QCheckBox::toggled, this, &MainWindow::settingsProxyChanged);
+    connect(this->ui.settingsProxyAuthenticationRequired, &QCheckBox::toggled, this, &MainWindow::settingsProxyChanged);
+    connect(this->ui.settingsProxyHost, &QLineEdit::textChanged, this, &MainWindow::settingsProxyChanged);
+    connect(this->ui.settingsProxyPassword, &QLineEdit::textChanged, this, &MainWindow::settingsProxyChanged);
     connect(this->ui.settingsProxyPort, SIGNAL(valueChanged(int)), this, SLOT(settingsProxyChanged()));
-    connect(this->ui.settingsProxyUsername, SIGNAL(textChanged(QString)), this, SLOT(settingsProxyChanged()));
+    connect(this->ui.settingsProxyUsername, &QLineEdit::textChanged, this, &MainWindow::settingsProxyChanged);
     connect(this->ui.settingsProxyType, SIGNAL(currentIndexChanged(int)), this, SLOT(settingsProxyChanged()));
     settingsProxyChanged();
     ui.settingsMinimizeToTray->setChecked(cg->settings.value("MinimizeToTray", false).toBool());
@@ -556,6 +557,11 @@ void MainWindow::compatibleUrlFoundInClipBoard(QString url) {
             this->raise();
         }
     }
+}
+
+void MainWindow::UrlFoundInClipBoard(QString url) {
+    this->ui.clipboard_content->setText(url);
+    this->ui.copy_from_clip->setEnabled(true);
 }
 
 void MainWindow::copyFromClipBoard() {
