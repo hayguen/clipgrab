@@ -47,6 +47,7 @@ public:
     bool isAudioOnly(int /*mode*/) const {return false;}
     bool isMono(int /*mode*/) const {return false;}
     bool hasMetaInfo(int /*mode*/) const { return false;}
+    virtual QString conversion_str() const;
 };
 
 #endif // CONVERTER_COPY_H

@@ -322,7 +322,7 @@ void ClipGrab::getUpdateInfo()
     QNetworkRequest updateInfoRequest;
     updateInfoRequest.setUrl(updateInfoRequestUrl);
     QNetworkAccessManager* updateInfoNAM = new QNetworkAccessManager;
-    qDebug() << "requesting update info from " << updateInfoRequestUrl.toString();
+    qDebug().noquote() << "requesting update info from " << updateInfoRequestUrl.toString();
     updateInfoNAM->get(updateInfoRequest);
     connect(updateInfoNAM, &QNetworkAccessManager::finished, this, &ClipGrab::parseUpdateInfo);
 }
@@ -339,7 +339,7 @@ void ClipGrab::getProgramVersion()
     QNetworkRequest updateInfoRequest;
     updateInfoRequest.setUrl(updateInfoRequestUrl);
     QNetworkAccessManager* updateInfoNAM = new QNetworkAccessManager;
-    qDebug() << "requesting update info from " << updateInfoRequestUrl.toString();
+    qDebug().noquote() << "requesting version info from " << updateInfoRequestUrl.toString();
     updateInfoNAM->get(updateInfoRequest);
     connect(updateInfoNAM, &QNetworkAccessManager::finished, this, &ClipGrab::parseProgramVersion);
 }
@@ -353,7 +353,7 @@ void ClipGrab::getYtDlVersion()
     QNetworkRequest updateInfoRequest;
     updateInfoRequest.setUrl(updateInfoRequestUrl);
     QNetworkAccessManager* updateInfoNAM = new QNetworkAccessManager;
-    qDebug() << "requesting update info from " << updateInfoRequestUrl.toString();
+    qDebug().noquote() << "requesting version info from " << updateInfoRequestUrl.toString();
     updateInfoNAM->get(updateInfoRequest);
     connect(updateInfoNAM, &QNetworkAccessManager::finished, this, &ClipGrab::parseYtDlVersion);
 }
@@ -367,7 +367,7 @@ void ClipGrab::getFFmpegReleases()
     QNetworkRequest updateInfoRequest;
     updateInfoRequest.setUrl(updateInfoRequestUrl);
     QNetworkAccessManager* updateInfoNAM = new QNetworkAccessManager;
-    qDebug() << "requesting release infos from " << updateInfoRequestUrl.toString();
+    qDebug().noquote() << "requesting version infos from " << updateInfoRequestUrl.toString();
     updateInfoNAM->get(updateInfoRequest);
     connect(updateInfoNAM, &QNetworkAccessManager::finished, this, &ClipGrab::parseFFmpegReleases);
 }
@@ -376,7 +376,7 @@ void ClipGrab::parseProgramVersion(QNetworkReply* reply)
 {
     if (!reply->bytesAvailable())
     {
-        qDebug() << "Could not reach update server C";
+        qDebug().noquote() << "Could not retrieve ClipGrab version info from " << ClipGrab::version_url;
         emit updateProgramVersion(QString::null);
         return;
     }
@@ -405,7 +405,7 @@ void ClipGrab::parseYtDlVersion(QNetworkReply* reply)
 {
     if (!reply->bytesAvailable())
     {
-        qDebug() << "Could not reach update server B";
+        qDebug().noquote() << "Could not retrieve " << YoutubeDl::ytdl_name << " version info from " << YoutubeDl::version_url;
         emit updateYtDlVersion(QString::null);
         return;
     }
@@ -435,7 +435,7 @@ void ClipGrab::parseFFmpegReleases(QNetworkReply* reply)
 
     if (!reply->bytesAvailable())
     {
-        qDebug() << "Could not retrieve " << converter_ffmpeg::releases;
+        qDebug().noquote() << "Could not retrieve FFmpeg version info from " << converter_ffmpeg::releases;
         emit updateFFmpegVersions(releases);
         return;
     }
@@ -462,7 +462,7 @@ void ClipGrab::parseFFmpegReleases(QNetworkReply* reply)
         if ( lines.at(i).contains("browser_download_url"))
         {
             QString line = lines.at(i).trimmed();
-            //qDebug() << "ffmpeg release download: " << line;
+            //qDebug().noquote() << "ffmpeg release download: " << line;
             int r = rx.indexIn(line);
             int cc = rx.captureCount();
             if (r < 0 || cc != 1)
@@ -485,7 +485,7 @@ void ClipGrab::parseFFmpegReleases(QNetworkReply* reply)
                 }
                 name = parts.join("-");
             }
-            // qDebug() << "ffmpeg release " << name << " @ " << url;
+            // qDebug().noquote() << "ffmpeg release " << name << " @ " << url;
             releases << name << url;
         }
     }
@@ -686,7 +686,7 @@ void ClipGrab::startUpdateDownload()
     updateFilePattern.insert(updateFilePattern.lastIndexOf(QRegExp("\\.dmg|\\.exe|\\.tar")), "-XXXXXX");
     this->updateFile = new QTemporaryFile(QDir::tempPath() + "/" + updateFilePattern);
     this->updateFile->open();
-    qDebug() << "Downloading update to " << this->updateFile->fileName();
+    qDebug().noquote() << "Downloading update to " << this->updateFile->fileName();
 
 #if USE_WEBENGINE
     this->updateMessageUi->buttonConfirm->setDisabled(true);
@@ -778,7 +778,7 @@ void ClipGrab::downloadYoutubeDl(bool force) {
     if (force == false && youtubeDlInstalled) {
         QString installedVersion = YoutubeDl::getVersion();
 
-        qDebug() << "Found " << YoutubeDl::executable << " " << installedVersion;
+        qDebug().noquote() << "Found " << YoutubeDl::executable << " " << installedVersion;
         if (installedVersion >= minVersion) return;
     }
     if (QSettings().value("disableYoutubeDlDownload", false).toBool()) return;
@@ -1134,7 +1134,7 @@ void ClipGrab::clearTempFiles() {
 }
 
 void ClipGrab::handleFFmpegPathAndVersion(QString path, QString version) {
-    qDebug() << "ffmpeg converter reported path " << path << " version " << version;
+    qDebug().noquote() << "ffmpeg converter reported path " << path << " version " << version;
     ffmpegPath_ = path;
     ffmpegVersion_ = version;
 }

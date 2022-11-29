@@ -46,6 +46,11 @@ QList<QString> converter::getModes() const
     return _modes;
 }
 
+QString converter::conversion_str() const
+{
+    return "";
+}
+
 QString converter::getExtensionForMode(int /*mode*/) const
 {
     return "";

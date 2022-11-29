@@ -49,11 +49,11 @@ void converter_copy::startConversion(
         }
         target.append("-");
         target.append(QString::number(i));
-
     }
 
     target.append("." + originalExtension);
 
+    qDebug().noquote() << "copying " << inputFile->fileName() << " to " << target;
     if (inputFile->copy(target))
     {
             inputFile->deleteLater();
@@ -76,4 +76,9 @@ bool converter_copy::isAvailable()
 converter* converter_copy::createNewInstance()
 {
     return new converter_copy();
+}
+
+QString converter_copy::conversion_str() const
+{
+    return "copy";
 }

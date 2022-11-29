@@ -323,7 +323,7 @@ void MainWindow::init()
     connect(this->ui.ff_update, &QPushButton::clicked, [=]() {
         QString branch = ui.ff_branch->currentText();
         QString url = ui.ff_branch->currentData().toString();
-        qDebug() << "update FFmpeg branch " << branch << " from URL " << url;
+        qDebug().noquote() << "update FFmpeg branch " << branch << " from URL " << url;
         cg->startFFmpegDownload(url);
     });
     connect(this->ui.ff_delete, &QPushButton::clicked, this, &MainWindow::handleFFmpegDelete);
@@ -386,8 +386,6 @@ void MainWindow::startDownload() {
     QString targetDirectory = cg->settings.value("savedPath", QStandardPaths::writableLocation(QStandardPaths::DesktopLocation)).toString();
     QString filename = video->getSafeFilename();
 
-    qDebug() << targetDirectory << filename;
-
     if (cg->settings.value("NeverAskForPath", false).toBool() == false) {
        targetFileSelected(video, QFileDialog::getSaveFileName(this, tr("Select Target"), targetDirectory +"/" + filename));
     } else {
@@ -399,8 +397,7 @@ void MainWindow::targetFileSelected(video* video, QString target)
 {
     if (target.isEmpty()) return;
 
-    QDir targetDir = QFileInfo(target).absoluteDir();
-    if (!targetDir.exists()) {
+    if ( ! QFileInfo(target).absoluteDir().exists() ) {
         ui.settingsNeverAskForPath->setChecked(false);
         this->startDownload();
         return;
@@ -437,6 +434,10 @@ void MainWindow::targetFileSelected(video* video, QString target)
     QString audio_quality = cg->settings.value("FFmpeg-audio-quality", "9").toString();
     video->setConverter(cg->formats.at(formatIdx)._converter, cg->formats.at(formatIdx)._mode, audio_bitrate, audio_quality);
     video->setTargetFilename(target);
+
+    qDebug().noquote() << "enqueuing download to " << target;
+    qDebug().noquote() << "  enqueued with bitrate " << audio_bitrate << " and quality " << audio_quality;
+
     cg->enqueueDownload(video);
 
     ui.downloadLineEdit->clear();
@@ -894,7 +895,7 @@ void MainWindow::updateYoutubeDlVersionInfo()
 void MainWindow::handleYtDlVersion(QString online_version) {
     if (online_version.isEmpty())
         online_version = tr("not available");
-    qDebug() << "MainWindow received YT online version: " << online_version;
+    qDebug().noquote() << "MainWindow received YT online version: " << online_version;
 
     QString youtubeDlVersion = YoutubeDl::getVersion();
     QString pythonVersion = YoutubeDl::getPythonVersion();
@@ -924,7 +925,7 @@ void MainWindow::handleProgramVersion(QString online_version)
 {
     if (online_version.isEmpty())
         online_version = tr("not available");
-    qDebug() << "MainWindow received Program online version: " << online_version;
+    qDebug().noquote() << "online available ClipGrab version: " << online_version;
 
     QString label = tr("<h2>ClipGrab</h2>\nClipGrab: %1<br>ClipGrab at <a href=\"%3\">%4</a> (%5)").arg(
                 QCoreApplication::applicationVersion(),
@@ -946,7 +947,7 @@ void MainWindow::handleFFmpegDownloadFinished(QString filePath)
 {
     QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     ffmpegDownloadedArchive = filePath;
-    qDebug() << "FFmpeg download finished: " << filePath;
+    qDebug().noquote() << "FFmpeg download finished: " << filePath;
 
     handleFFmpegDelete();
     if ( !ffmpegUnpackProcess ) {
@@ -1000,7 +1001,7 @@ void MainWindow::handleFFmpegDownloadFinished(QString filePath)
 void MainWindow::handleFFmpegUnpackFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
     (void)exitStatus;
-    qDebug() << "FFmpeg unpacking finished with exitCode " << exitCode;
+    qDebug().noquote() << "FFmpeg unpacking finished with exitCode " << exitCode;
     if (ffmpegDownloadedArchive.isEmpty() || !QFile::exists(ffmpegDownloadedArchive)) {
         qDebug() << "FFmpeg archive not found!";
         return;
@@ -1021,10 +1022,10 @@ void MainWindow::handleFFmpegUnpackFinished(int exitCode, QProcess::ExitStatus e
             if (ok)
                 QDir(dir+"/temp").removeRecursively();
             else
-                qDebug() << "Error: failed to copy " << executable << " to " << target;
+                qDebug().noquote() << "Error: failed to copy " << executable << " to " << target;
         }
         else
-            qDebug() << "Error: " << executable << " not found in unpacked zip";
+            qDebug().noquote() << "Error: " << executable << " not found in unpacked zip";
     }
 #endif
 

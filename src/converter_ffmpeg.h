@@ -94,6 +94,7 @@ public:
     bool isAudioOnly(int mode) const;
     bool isMono(int /*mode*/) const;
     bool hasMetaInfo(int /*mode*/) const;
+    virtual QString conversion_str() const;
 
 private:
     void parseVersion(QString path, QString output);

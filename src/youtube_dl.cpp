@@ -12,6 +12,7 @@ const char * YoutubeDl::executable = "yt-dlp.exe";
 const char * YoutubeDl::python = "python3";
 const char * YoutubeDl::executable = "yt-dlp";
 #endif
+const char * YoutubeDl::ytdl_name = "yt-dlp";
 const char * YoutubeDl::homepage_url = "https://github.com/yt-dlp/yt-dlp";
 const char * YoutubeDl::homepage_short = "github.com/yt-dlp/yt-dlp";
 
@@ -32,6 +33,7 @@ const char * YoutubeDl::download_url = "https://github.com/yt-dlp/yt-dlp/release
 #define NEED_PYTHON 1
 const char * YoutubeDl::python = "python";
 const char * YoutubeDl::executable = "youtube-dl";
+const char * YoutubeDl::ytdl_name = "youtube-dl";
 const char * YoutubeDl::version_url = "https://raw.githubusercontent.com/ytdl-org/youtube-dl/master/youtube_dl/version.py";
 const char * YoutubeDl::download_url = "https://yt-dl.org/downloads/latest/youtube-dl";
 const char * YoutubeDl::homepage_url = "https://youtube-dl.org";
@@ -60,7 +62,7 @@ QString YoutubeDl::find(bool force) {
         if (process->state() != QProcess::NotRunning) process->kill();
         if (process->exitCode() == QProcess::ExitStatus::NormalExit) {
             yt_dn_path = localPath;
-            qDebug() << "Found " << YoutubeDl::executable << " in AppDataLocation at " << yt_dn_path;
+            qDebug().noquote().nospace() << "Found " << YoutubeDl::executable << " in AppDataLocation at " << yt_dn_path;
             return yt_dn_path;
         }
     }
@@ -75,12 +77,12 @@ QString YoutubeDl::find(bool force) {
         if (process->state() != QProcess::NotRunning) process->kill();
         if (process->exitCode() == QProcess::ExitStatus::NormalExit) {
             yt_dn_path = globalPath;
-            qDebug() << "Found " << YoutubeDl::executable << " executable at " << yt_dn_path;
+            qDebug().noquote().nospace() << "Found " << YoutubeDl::executable << " executable at " << yt_dn_path;
             return yt_dn_path;
         }
     }
 
-    qDebug() << "Error: could not find " << YoutubeDl::executable;
+    qDebug().noquote().nospace() << "Error: could not find " << YoutubeDl::executable;
     return "";
 }
 
@@ -156,9 +158,9 @@ QProcess* YoutubeDl::instance(QString python_program, QStringList arguments, boo
     process->setArguments(args);
 #if 0
     if ( !add_pyprog_arg )
-        qDebug() << "starting " << python_program << " without interpreter: " << process->arguments();
+        qDebug().noquote().nospace() << "starting " << python_program << " without interpreter: " << process->arguments();
     else
-        qDebug() << "starting " << python_program << " with " << process->program() << " interpreter: " << process->arguments();
+        qDebug().noquote().nospace() << "starting " << python_program << " with " << process->program() << " interpreter: " << process->arguments();
 #endif
     return process;
 }
@@ -172,7 +174,7 @@ QString YoutubeDl::getVersion() {
     QString version = youtubeDl->readAllStandardOutput() + youtubeDl->readAllStandardError();
     youtubeDl->deleteLater();
     QString ret = version.replace("\n", "");
-    // qDebug() << "getVersion() -> " << ret;
+    // qDebug().noquote().nospace() << "getVersion() -> " << ret;
     return ret;
 }
 
@@ -186,7 +188,7 @@ QString YoutubeDl::getPythonVersion() {
     QString version = youtubeDl->readAllStandardOutput() + youtubeDl->readAllStandardError();
     youtubeDl->deleteLater();
     QString ret = version.replace("\n", "");
-    // qDebug() << "getPythonVersion() -> " << ret;
+    // qDebug().noquote().nospace() << "getPythonVersion() -> " << ret;
     return ret;
 }
 
@@ -197,6 +199,6 @@ QString YoutubeDl::findPython() {
     QProcess* youtubeDl = instance("", QStringList("--version"), false);
     QString program = youtubeDl->program();
     youtubeDl->deleteLater();
-    // qDebug() << "findPython() -> " << program;
+    // qDebug().noquote().nospace() << "findPython() -> " << program;
     return program;
 }

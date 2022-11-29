@@ -45,6 +45,7 @@ public:
         QString audio_quality
         );
     QList<QString> getModes() const;
+    virtual QString conversion_str() const;
     virtual QString getExtensionForMode(int mode) const;
     virtual bool isAudioOnly(int /*mode*/) const { return false;}
     virtual bool isMono(int /*mode*/) const { return false;}

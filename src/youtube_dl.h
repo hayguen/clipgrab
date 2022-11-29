@@ -9,6 +9,7 @@ class YoutubeDl
 public:
     YoutubeDl();
 
+    static const char * ytdl_name;
     static const char * executable;
     static const char * version_url;   // check for line: __version__ = '2022.10.04'
     static const char * download_url;

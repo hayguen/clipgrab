@@ -157,7 +157,6 @@ class ClipGrab : public QObject
 
     void downloadYoutubeDl(bool force = false);
     void updateYoutubeDl();
-    QProcess* runYouTubeDl(QStringList);
     void startYoutubeDlDownload();
     void startFFmpegDownload(QString url);
     void showDownloaderDlg(TypedHelperDownloader::DownloaderType dlgType);

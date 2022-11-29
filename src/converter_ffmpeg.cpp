@@ -72,8 +72,8 @@ void ffmpegThread::run()
     {
         ffmpegCall.append(" -i \"" + inputFile->fileName() + "\"" );
 
-
         ffmpeg = new QProcess(parent);
+        qDebug().noquote().nospace() << "starting FFmpeg command: " << ffmpegCall;
         ffmpeg->start(ffmpegCall);
         ffmpeg->waitForFinished(-1);
         QString videoInfo = ffmpeg->readAllStandardError();
@@ -100,8 +100,8 @@ void ffmpegThread::run()
             videoBitrate = expression.cap(1);
         }
 
-        qDebug() << "Source video: " << videoCodec << videoBitrate << audioCodec;
-        qDebug() << "Target video: " << acceptedVideoCodec << acceptedAudioCodec;
+        qDebug().noquote() << "Source video: " << videoCodec << videoBitrate << audioCodec;
+        qDebug().noquote() << "Target video: " << acceptedVideoCodec << acceptedAudioCodec;
 
         for (int i = 0; i < acceptedAudioCodec.size(); ++i)
         {
@@ -146,7 +146,7 @@ void ffmpegThread::run()
                     QString opt_str = audio_quality.trimmed();
                     int audio_qual = opt_str.toInt(&conv_ok);
                     QString qual_opt = (!opt_str.isEmpty() && conv_ok && 1 <= audio_qual && audio_qual <= 9) ? opt_str : "9";
-                    qDebug() << "ffmpegThread::run(): accepting audio codec libvorbis with audio quality: -aq " << qual_opt;
+                    qDebug().noquote() << "ffmpegThread::run(): accepting audio codec libvorbis with audio quality: -aq " << qual_opt;
                     if (audioCodec.contains("libvorbis"))
                     {
                         ffmpegCall = ffmpegCall + " -acodec libvorbis -aq " + qual_opt;
@@ -163,8 +163,8 @@ void ffmpegThread::run()
                     int rate = opt_str.toInt(&conv_ok);
                     QString rate_opt = (!opt_str.isEmpty() && conv_ok && 4 <= rate && rate <= 384) ? opt_str : "256";
                     rate_opt = rate_opt + "k";
-                    qDebug() << "ffmpegThread::run(): accepting/using audio codec " << acceptedAudioCodec[0] << " of " << acceptedAudioCodec;
-                    qDebug() << "ffmpegThread::run(): accepting/using audio codec .. with bitrate " + rate_opt;
+                    qDebug().noquote() << "ffmpegThread::run(): accepting/using audio codec " << acceptedAudioCodec[0] << " of " << acceptedAudioCodec;
+                    qDebug().noquote() << "ffmpegThread::run(): accepting/using audio codec .. with bitrate " + rate_opt;
                     ffmpegCall = ffmpegCall + " -acodec " + acceptedAudioCodec[0] + " -ab " + rate_opt;
                 }
             }
@@ -241,7 +241,7 @@ void ffmpegThread::run()
         ffmpegCall = ffmpegCall + " \"" + target + "\"";
     }
 
-    qDebug().quote() << "Executing ffmpeg: " << ffmpegCall;
+    qDebug().noquote().quote() << "Executing ffmpeg: " << ffmpegCall;
 
     ffmpeg = new QProcess(parent);
     duration_s = -1.0;
@@ -311,6 +311,7 @@ void ffmpegThread::run()
     connect(ffmpeg , &QProcess::readyReadStandardError, this, [=]() {
         readLines(false);
     });
+    qDebug().noquote().nospace() << "starting FFmpeg command: " << ffmpegCall;
     ffmpeg->start(ffmpegCall);
     ffmpeg->waitForFinished(-1);
     ffmpeg->close();
@@ -468,7 +469,6 @@ void converter_ffmpeg::startConversion(
         break;
     }
 
-
     ffmpeg.inputFile = inputFile;
     ffmpeg.acceptedAudioCodec = acceptedAudio;
     ffmpeg.acceptedVideoCodec = acceptedVideo;
@@ -481,7 +481,6 @@ void converter_ffmpeg::startConversion(
     ffmpeg.container = container;
     connect(&ffmpeg, SIGNAL(finished()), this, SLOT(emitFinished()));
     ffmpeg.start();
-
 }
 
 void converter_ffmpeg::concatenate(QList<QFile *> files, QFile *target, QString originalFormat)
@@ -491,7 +490,6 @@ void converter_ffmpeg::concatenate(QList<QFile *> files, QFile *target, QString 
     ffmpeg.originalFormat = originalFormat;
     connect(&ffmpeg, SIGNAL(finished()), this, SLOT(emitFinished()));
     ffmpeg.start();
-
 }
 
 converter* converter_ffmpeg::createNewInstance()
@@ -520,14 +518,17 @@ bool converter_ffmpeg::isAvailable()
         if (k == 0) {
             QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
             ffmpegPath = dir + "/" + converter_ffmpeg::executable;
+            qDebug().noquote() << "starting FFmpeg test: " << ffmpegPath + " -v quiet";
             testProcess.start(ffmpegPath + " -v quiet");
         }
         else if ( k == 1) {
             ffmpegPath = QStandardPaths::findExecutable(converter_ffmpeg::executable);
+            qDebug().noquote() << "starting FFmpeg test: " << ffmpegPath + " -v quiet";
             testProcess.start(ffmpegPath + " -v quiet");
         }
         else {
             ffmpegPath = QStandardPaths::findExecutable("avconv");
+            qDebug().noquote() << "starting avconv test: " << ffmpegPath + " -v quiet";
             testProcess.start(ffmpegPath + " -v quiet");
         }
 
@@ -545,6 +546,7 @@ bool converter_ffmpeg::isAvailable()
     }
 #endif
 
+    qDebug().noquote() << "starting/checking FFmpeg formats: " << ffmpegPath + " -formats";
     testProcess.start(ffmpegPath + " -formats");
     testProcess.waitForFinished();
     QString outs = testProcess.readAllStandardOutput();
@@ -580,12 +582,17 @@ void converter_ffmpeg::parseVersion(QString path, QString output)
                 line = line.left(idx_copy);
             line = line.trimmed();
             if ( idx_ver >= 0 && idx_copy >= 0 && line.length() > 0 ) {
-                qDebug() << "ffmpeg path: " << path;
-                qDebug() << "ffmpeg version: " << line;
+                qDebug().noquote() << "ffmpeg path: " << path;
+                qDebug().noquote() << "ffmpeg version: " << line;
                 emit ffmpegPathAndVersion(path, line);
                 return;
             }
         }
     }
     emit ffmpegPathAndVersion(path, QString::null);
+}
+
+QString converter_ffmpeg::conversion_str() const
+{
+    return "conversion";
 }
