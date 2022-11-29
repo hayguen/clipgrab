@@ -50,6 +50,7 @@ public:
     virtual bool isMono(int /*mode*/) const { return false;}
     virtual bool hasMetaInfo(int /*mode*/) const { return false;}
     virtual bool isAvailable();
+    void report_progress(double percent);
 
     QString target;
 

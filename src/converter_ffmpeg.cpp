@@ -291,7 +291,8 @@ void ffmpegThread::run()
                         if (progress_permille < per_mille) {
                             progress_permille = per_mille;
                             //qDebug().noquote() << "conversion progress: " << QString::number(progress_s, 'f', 1) << "sec:" << QString::number(progress_percent, 'f', 1) << "%";
-                            emit converter->progress(progress_percent);
+                            converter_ffmpeg& c = *converter;   // why does converter->report_progress() or emit converter->... produce C2059 !?
+                            c.report_progress(progress_percent);
                         }
                         continue;
                     }

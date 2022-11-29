@@ -60,3 +60,8 @@ converter* converter::createNewInstance()
 {
     return new converter();
 }
+
+void converter::report_progress(double percent)
+{
+    emit progress(percent);
+}
