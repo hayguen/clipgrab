@@ -44,6 +44,7 @@ public:
         QString audio_bitrate,
         QString audio_quality
         );
+    virtual void abortConversion();
     QList<QString> getModes() const;
     virtual QString conversion_str() const;
     virtual QString getExtensionForMode(int mode) const;

@@ -34,7 +34,7 @@ public:
 private:
     ClipGrab* cg;
     QList<video*> videos;
-    QVector<QString> header {tr("Portal"), tr("Title"), tr("Quality"), tr("Format"), tr("Progress")};
+    QVector<QString> header {tr("Portal"), tr("Title"), tr("Stream"), tr("Save As"), tr("Progress")};
 };
 
 #endif // DOWNLOADLISTMODEL_H

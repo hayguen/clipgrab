@@ -50,6 +50,8 @@ int main(int argc, char *argv[])
     parser.addOption(startMinimizedOption);
     QCommandLineOption verboseOption(QStringList() << "verbose", "Print verbose output");
     parser.addOption(verboseOption);
+    QCommandLineOption keepOption(QStringList() << "keep", "Keep yt-dl result file(s)");
+    parser.addOption(keepOption);
 #if CLIPGRAB_ORG_UPDATER
     QCommandLineOption suppress_update_option(QStringList() << "no-update", "Suppress update checking");
     QCommandLineOption perform_update_option(QStringList() << "update", "Check for updates");
@@ -95,6 +97,9 @@ int main(int argc, char *argv[])
 
     bool verbose = parser.isSet(verboseOption);
     settings.setValue("verbose", verbose);
+
+    bool keep = parser.isSet(keepOption);
+    settings.setValue("keep", keep);
 
     MainWindow w(cg);
     w.init();

@@ -41,6 +41,10 @@ void converter::startConversion(
 {
 }
 
+void converter::abortConversion()
+{
+}
+
 QList<QString> converter::getModes() const
 {
     return _modes;

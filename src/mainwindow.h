@@ -164,6 +164,10 @@ private slots:
     void on_settingsForceIpV4_toggled(bool checked);
     void on_settingsUpdateCheck_toggled(bool checked);
     void on_settingsShowLogo_toggled(bool checked);
+
+    void on_settings_mp4_accepts_h264_toggled(bool checked);
+    void on_settings_mp4_accepts_av1_toggled(bool checked);
+
     void on_ff_branch_currentIndexChanged(int index);
 };
 

@@ -43,6 +43,7 @@ public:
         QString audio_bitrate,
         QString audio_quality
         );
+    void abortConversion();
     bool isAvailable();
     bool isAudioOnly(int /*mode*/) const {return false;}
     bool isMono(int /*mode*/) const {return false;}

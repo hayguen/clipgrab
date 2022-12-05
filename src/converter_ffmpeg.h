@@ -45,16 +45,23 @@ public:
     bool audio_to_mono;
     QStringList acceptedAudioCodec;
     QStringList acceptedVideoCodec;
-    QString ffmpegCall;
-    QProcess* ffmpeg;
+    QString targetVideoCodec;
+    QString targetAudioCodec;
 
     QList<QFile*> concatFiles;
     QFile* concatTarget;
     QString originalFormat;
 
+    void abortConversion();
     void run();
 
 private:
+    void eval_info_run(const QString& videoInfo);
+    void setup_conv_audio();
+    void setup_conv_video();
+
+    QProcess ffmpeg_info_run;
+    QProcess ffmpeg_conv_run;
     converter_ffmpeg * converter;
     const QRegularExpression re_duration;
     const QRegularExpression re_progress;
@@ -62,6 +69,19 @@ private:
     double progress_s;
     double progress_percent;
     int progress_permille;
+    QStringList ffmpegArgs;
+
+    QRegExp re_audio_codec;
+    QRegExp re_video_codec;
+    QRegExp re_video_bitrate;
+
+    QString audioCodec;
+    QString videoCodec;
+    QString videoBitrate;
+    bool audioCodecAccepted;
+    bool videoCodecAccepted;
+
+    bool is_aborted;
 };
 
 class converter_ffmpeg : public converter
@@ -88,6 +108,7 @@ public:
         QString audio_bitrate,
         QString audio_quality
         );
+    void abortConversion();
     void concatenate(QList<QFile*> files, QFile* target, QString originalFormat);
     bool isAvailable();
     QString getExtensionForMode(int mode) const;
@@ -103,6 +124,10 @@ private:
 
     enum Mode {
         mode_mp4 = 0,
+        mode_mp4_avc,
+        mode_mp4_hevc,
+        mode_webm_vp8,
+        mode_webm_vp9,
         mode_wmv,
         mode_ogg,
         mode_audio,

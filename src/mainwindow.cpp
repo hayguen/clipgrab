@@ -166,24 +166,27 @@ void MainWindow::init()
         ui.settingsRadioNotificationsNever->setChecked(true);
     }
 
-      ui.settingsRememberVideoQuality->setChecked(cg->settings.value("rememberVideoQuality", true).toBool());
-      ui.settingsRememberLogins->hide();
+    ui.settingsRememberVideoQuality->setChecked(cg->settings.value("rememberVideoQuality", true).toBool());
+    ui.settingsRememberLogins->hide();
 //    ui.settingsRememberLogins->setChecked(cg->settings.value("rememberLogins", true).toBool());
-      ui.settingsRemoveFinishedDownloads->setChecked(cg->settings.value("RemoveFinishedDownloads", false).toBool());
-      ui.settingsIgnoreSSLErrors->hide();
+    ui.settingsRemoveFinishedDownloads->setChecked(cg->settings.value("RemoveFinishedDownloads", false).toBool());
+    ui.settingsIgnoreSSLErrors->hide();
 //    ui.settingsIgnoreSSLErrors->setChecked(cg->settings.value(("IgnoreSSLErrors"), false).toBool());
-      ui.settingsForceIpV4->setChecked(cg->settings.value("forceIpV4", false).toBool());
-      ui.settingsUpdateCheck->setChecked(cg->settings.value("Check-Updates", true).toBool());
-      ui.settingsShowLogo->setChecked(cg->settings.value("Show-Logo", true).toBool());
+    ui.settingsForceIpV4->setChecked(cg->settings.value("forceIpV4", false).toBool());
+    ui.settingsUpdateCheck->setChecked(cg->settings.value("Check-Updates", true).toBool());
+    ui.settingsShowLogo->setChecked(cg->settings.value("Show-Logo", true).toBool());
 #if CLIPGRAB_ORG_UPDATER == 0
-      ui.settingsUpdateCheck->hide();
-      ui.settingsShowLogo->hide();
-      on_settingsShowLogo_toggled(false);
+    ui.settingsUpdateCheck->hide();
+    ui.settingsShowLogo->hide();
+    on_settingsShowLogo_toggled(false);
 #endif
 #if HIDE_DONATION
-      ui.labelSupport->hide();
-      ui.buttonDonate->hide();
+    ui.labelSupport->hide();
+    ui.buttonDonate->hide();
 #endif
+
+    ui.settings_mp4_accepts_h264->setChecked(cg->settings.value("mp4_accepts_h264", true).toBool());
+    ui.settings_mp4_accepts_av1->setChecked(cg->settings.value("mp4_accepts_av1", true).toBool());
 
     int langIndex = 0;
     for (int i=0; i < cg->languages.count(); i++)
@@ -260,6 +263,14 @@ void MainWindow::init()
     qualityShortcutB = new QShortcut(QKeySequence("Ctrl+Q"), this);
     connect(qualityShortcutA, &QShortcut::activated, this, &MainWindow::activate_quality_cb);
     connect(qualityShortcutB, &QShortcut::activated, this, &MainWindow::activate_quality_cb);
+
+    const QString tt_stream = tr("Select the stream\n- with it's CODEC, provided at URL");
+    const QString tt_save_as = tr("Select the container (file extension),\nthe acceptable CODECs, to save without conversion,\nor the targeted CODEC for conversion.\n('Original' is faster, saving CPU and energy)");
+    ui.label_stream->setToolTip(tt_stream);
+    ui.downloadComboQuality->setToolTip(tt_stream);
+    ui.label_dn_format->setToolTip(tt_save_as);
+    ui.downloadComboFormat->setToolTip(tt_save_as);
+
 
     //*
     //*Miscellaneous
@@ -470,13 +481,25 @@ void MainWindow::handleCurrentVideoStateChanged(video* video) {
     ui.downloadComboQuality->clear();
     QList<videoQuality> qualities = video->getQualities();
     for (int i = 0; i < qualities.size(); i++) {
-        QString reso_ext = QString("%1;;%2").arg(qualities.at(i).resolution).arg(qualities.at(i).containerName);
+        QString reso_ext = QString("%1;;%2;;%3;;%4")
+                               .arg(qualities.at(i).resolution)
+                               .arg(
+                                   qualities.at(i).containerName,
+                                   qualities.at(i).videoCodec,
+                                   qualities.at(i).audioCodec
+                                   );
         ui.downloadComboQuality->addItem(qualities.at(i).name, reso_ext);
     }
 
     if (cg->settings.value("rememberVideoQuality", true).toBool()) {
         const int rememberedResolution = cg->settings.value("rememberedVideoQuality", -1).toInt();
         const QString rememberedContainer = cg->settings.value("rememberedVideoContainer", "").toString();
+        QString rememberedVideoCodec = cg->settings.value("rememberedVideoCodec", "none").toString();
+        QString rememberedAudioCodec = cg->settings.value("rememberedAudioCodec", "none").toString();
+
+        // qDebug() << "auto-select: try to restore last remembered reso: " << rememberedResolution << " container: " << rememberedContainer
+        //          << "  video-codec: " << rememberedVideoCodec << "  audio-codec: " << rememberedAudioCodec;
+
         int bestResolutionMatch = 0;
         int bestResolutionMatchPosition = 0;
         for (int i = 0; i < qualities.length(); i++) {
@@ -485,18 +508,61 @@ void MainWindow::handleCurrentVideoStateChanged(video* video) {
                 bestResolutionMatch = resolution;
             }
         }
-        QList<int> best_qualities;
-        for (int i = 0; i < qualities.length(); i++) {
-            if ( qualities.at(i).resolution == bestResolutionMatch )
-                best_qualities.append(i);
-        }
-        bestResolutionMatchPosition = ( best_qualities.size() ? best_qualities.at(0) : 0 );
-        for (const int i : best_qualities) {
-            if ( qualities.at(i).containerName == rememberedContainer ) {
-                bestResolutionMatchPosition = i;
-                break;
+
+        QList<int> best_qualitiesA;
+        QList<int> best_qualitiesB;
+        while (true) {
+            for (int i = 0; i < qualities.length(); i++) {
+                if ( qualities.at(i).resolution == bestResolutionMatch )
+                    best_qualitiesA.append(i);
             }
+            if (best_qualitiesA.isEmpty())
+                break;  // no matching resolutions => break
+
+            // qDebug() << "auto-select last remembered: best reso: " << bestResolutionMatch << "#" << best_qualitiesA.size();
+            bestResolutionMatchPosition = best_qualitiesA.at(0);
+            best_qualitiesB.clear();
+            for (const int i : best_qualitiesA) {
+                if ( qualities.at(i).containerName == rememberedContainer ) {
+                    best_qualitiesB.append(i);
+                }
+            }
+            // qDebug() << "auto-select last remembered: found matching container: " << rememberedContainer << "#" << best_qualitiesB.size();
+            if (best_qualitiesB.isEmpty())
+                break;
+
+            bestResolutionMatchPosition = best_qualitiesB.at(0);
+            best_qualitiesA.clear();
+            for (const int i : best_qualitiesB) {
+                if ( qualities.at(i).videoCodec == rememberedVideoCodec ) {
+                    best_qualitiesA.append(i);
+                }
+            }
+            // qDebug() << "auto-select last remembered: found matching video-codec: " << rememberedVideoCodec << "#" << best_qualitiesA.size();
+            if (best_qualitiesA.isEmpty())
+                break;
+
+            bestResolutionMatchPosition = best_qualitiesA.at(0);
+            best_qualitiesB.clear();
+            for (const int i : best_qualitiesA) {
+                if ( qualities.at(i).audioCodec == rememberedAudioCodec ) {
+                    best_qualitiesB.append(i);
+                }
+            }
+            // qDebug() << "auto-select last remembered: found matching audio-codec: " << rememberedAudioCodec << "#" << best_qualitiesB.size();
+            if (best_qualitiesB.isEmpty())
+                break;
+
+            bestResolutionMatchPosition = best_qualitiesB.at(0);
+            break;
         }
+
+        // if ( bestResolutionMatchPosition >= 0 && bestResolutionMatchPosition < qualities.size() ) {
+        //     const int i = bestResolutionMatchPosition;
+        //     const videoQuality & v = qualities.at(i);
+        //     qDebug() << "auto-select: final select is: reso: " << v.resolution << " container: " << v.containerName
+        //              << "  video-codec: " << v.videoCodec << "  audio-codec: " << v.audioCodec;
+        // }
         ui.downloadComboQuality->setCurrentIndex(bestResolutionMatchPosition);
     }
     this->updatingComboQuality = false;
@@ -647,8 +713,8 @@ void MainWindow::disableDownloadUi(bool disable)
     ui.downloadComboFormat->setDisabled(disable);
     ui.downloadComboQuality->setDisabled(disable);
     ui.downloadStart->setDisabled(disable);
-    ui.label_2->setDisabled(disable);
-    ui.label_3->setDisabled(disable);
+    ui.label_dn_format->setDisabled(disable);
+    ui.label_stream->setDisabled(disable);
 }
 
 void MainWindow::disableDownloadTreeButtons(bool disable)
@@ -1093,15 +1159,29 @@ void MainWindow::on_downloadComboQuality_currentIndexChanged(int index)
     QStringList lst = reso_ext.split(";;");
     int reso = 0;
     QString ext;
-    if ( lst.size() == 2 ) {
+    QString vCodec;
+    QString aCodec;
+    if ( lst.size() <= 1)
+        reso = reso_ext.toInt();
+    else if ( 1 < lst.size() ) {
         reso = lst.at(0).toInt();
         ext = lst.at(1);
+        if ( 2 < lst.size() )
+            vCodec = lst.at(2);
+        if ( 3 < lst.size() )
+            aCodec = lst.at(3);
     }
-    else if (lst.size() <= 1)
-        reso = reso_ext.toInt();
+    if ( vCodec.isEmpty() )
+        vCodec = "none";
+    if ( aCodec.isEmpty() )
+        aCodec = "none";
 
     cg->settings.setValue("rememberedVideoQuality", reso);
     cg->settings.setValue("rememberedVideoContainer", ext);
+    cg->settings.setValue("rememberedVideoCodec", vCodec);
+    cg->settings.setValue("rememberedAudioCodec", aCodec);
+    // qDebug() << "remembering for later auto-select: reso: " << reso << " container: " << ext
+    //          << "  video-codec: " << vCodec << "  audio-codec: " << aCodec;
 }
 
 void MainWindow::on_downloadTree_doubleClicked(const QModelIndex &index)
@@ -1130,6 +1210,14 @@ void MainWindow::on_settingsShowLogo_toggled(bool checked) {
         ui.label_4->hide();
         ui.verticalSpacer_9->changeSize(10, 0);
     }
+}
+
+void MainWindow::on_settings_mp4_accepts_h264_toggled(bool checked) {
+    cg->settings.setValue("mp4_accepts_h264", checked);
+}
+
+void MainWindow::on_settings_mp4_accepts_av1_toggled(bool checked) {
+    cg->settings.setValue("mp4_accepts_av1", checked);
 }
 
 void MainWindow::on_ff_branch_currentIndexChanged(int index) {

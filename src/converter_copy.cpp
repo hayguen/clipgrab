@@ -68,6 +68,10 @@ void converter_copy::startConversion(
 
 }
 
+void converter_copy::abortConversion()
+{
+}
+
 bool converter_copy::isAvailable()
 {
     return true;
