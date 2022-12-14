@@ -416,7 +416,8 @@ void MainWindow::targetFileSelected(video* video, QString target)
 
     if (cg->settings.value("saveLastPath", true).toBool() == true) {
         QString targetDir = target;
-        targetDir.remove(targetDir.split("/", Qt::SkipEmptyParts).last()).replace(QRegExp("/+$"), "/");
+        // targetDir.remove(targetDir.split("/", Qt::SkipEmptyParts).last()).replace(QRegExp("/+$"), "/");
+        targetDir.remove(targetDir.split("/", QString::SkipEmptyParts).last()).replace(QRegExp("/+$"), "/");
         ui.settingsSavedPath->setText(targetDir);
     }
 
