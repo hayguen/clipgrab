@@ -167,7 +167,7 @@ QProcess* YoutubeDl::instance(QString python_program, QStringList arguments, boo
 
 QString YoutubeDl::getVersion() {
     if (find().isEmpty())
-        return QString::null;
+        return QString();
     QProcess* youtubeDl = instance(QStringList("--version"));
     youtubeDl->start();
     youtubeDl->waitForFinished(10000);

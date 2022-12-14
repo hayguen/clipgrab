@@ -73,7 +73,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(ClipGrab* cg, QWidget *parent = 0, Qt::WindowFlags flags = 0);
+    MainWindow(ClipGrab* cg, QWidget *parent = 0, Qt::WindowFlags flags = Qt::WindowFlags());
     ~MainWindow();
     void init();
     void hide_logo();

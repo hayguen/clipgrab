@@ -656,17 +656,17 @@ bool converter_ffmpeg::isAvailable()
             QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
             ffmpegPath = dir + "/" + converter_ffmpeg::executable;
             qDebug().noquote() << "\nStarting FFmpeg test: " << ffmpegPath + " -v quiet";
-            testProcess.start(ffmpegPath + " -v quiet");
+            testProcess.start(ffmpegPath, QStringList() << "-v" << "quiet");
         }
         else if ( k == 1) {
             ffmpegPath = QStandardPaths::findExecutable(converter_ffmpeg::executable);
             qDebug().noquote() << "\nStarting FFmpeg test: " << ffmpegPath + " -v quiet";
-            testProcess.start(ffmpegPath + " -v quiet");
+            testProcess.start(ffmpegPath, QStringList() << "-v" << "quiet");
         }
         else {
             ffmpegPath = QStandardPaths::findExecutable("avconv");
             qDebug().noquote() << "\nStarting avconv test: " << ffmpegPath + " -v quiet";
-            testProcess.start(ffmpegPath + " -v quiet");
+            testProcess.start(ffmpegPath, QStringList() << "-v" << "quiet");
         }
 
         if (testProcess.waitForFinished())
@@ -678,13 +678,13 @@ bool converter_ffmpeg::isAvailable()
     if (!found_program) {
         emit error(tr("No installed version of avconv or ffmpeg coud be found. Converting files and downloading 1080p videos from YouTube is not supported."));
         settings.setValue("ffmpegPath", "");
-        emit ffmpegPathAndVersion(QString::null, QString::null);
+        emit ffmpegPathAndVersion(QString(), QString());
         return false;
     }
 #endif
 
     qDebug().noquote() << "\nStarting/checking FFmpeg formats: " << ffmpegPath + " -formats";
-    testProcess.start(ffmpegPath + " -formats");
+    testProcess.start(ffmpegPath, QStringList() << "-formats");
     testProcess.waitForFinished();
     QString outs = testProcess.readAllStandardOutput();
     QString errs = testProcess.readAllStandardError();
@@ -726,7 +726,7 @@ void converter_ffmpeg::parseVersion(QString path, QString output)
             }
         }
     }
-    emit ffmpegPathAndVersion(path, QString::null);
+    emit ffmpegPathAndVersion(path, QString());
 }
 
 QString converter_ffmpeg::conversion_str() const

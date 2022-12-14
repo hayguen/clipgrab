@@ -346,7 +346,7 @@ void MainWindow::init()
         this->cg->getProgramVersion();
         this->ui.program_version_check->setEnabled(false);
     });
-    handleProgramVersion(QString::null);
+    handleProgramVersion(QString());
 #else
     ui.program_version_check->hide();
     ui.labelProgramVersionInfo->hide();
@@ -416,7 +416,7 @@ void MainWindow::targetFileSelected(video* video, QString target)
 
     if (cg->settings.value("saveLastPath", true).toBool() == true) {
         QString targetDir = target;
-        targetDir.remove(targetDir.split("/", QString::SkipEmptyParts).last()).replace(QRegExp("/+$"), "/");
+        targetDir.remove(targetDir.split("/", Qt::SkipEmptyParts).last()).replace(QRegExp("/+$"), "/");
         ui.settingsSavedPath->setText(targetDir);
     }
 
@@ -955,7 +955,7 @@ void MainWindow::dropEvent(QDropEvent *event)
 
 void MainWindow::updateYoutubeDlVersionInfo()
 {
-    handleYtDlVersion(QString::null);
+    handleYtDlVersion(QString());
 }
 
 void MainWindow::handleYtDlVersion(QString online_version) {

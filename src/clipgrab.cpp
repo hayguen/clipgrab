@@ -204,8 +204,7 @@ ClipGrab::ClipGrab()
     //*
     //* Add Mozilla Root CA certificats to avoid errors from missing system certificates
     //*
-    QSslSocket::addDefaultCaCertificates(":/crt/mozilla-root-cas.txt");
-
+    QSslConfiguration::defaultConfiguration().addCaCertificates(":/crt/mozilla-root-cas.txt");
 
     //*
     //* Remove previously downloaded update
@@ -377,7 +376,7 @@ void ClipGrab::parseProgramVersion(QNetworkReply* reply)
     if (!reply->bytesAvailable())
     {
         qDebug().noquote() << "Could not retrieve ClipGrab version info from " << ClipGrab::version_url;
-        emit updateProgramVersion(QString::null);
+        emit updateProgramVersion(QString());
         return;
     }
 
@@ -397,7 +396,7 @@ void ClipGrab::parseProgramVersion(QNetworkReply* reply)
             return;
         }
     }
-    emit updateProgramVersion(QString::null);
+    emit updateProgramVersion(QString());
 }
 
 
@@ -406,7 +405,7 @@ void ClipGrab::parseYtDlVersion(QNetworkReply* reply)
     if (!reply->bytesAvailable())
     {
         qDebug().noquote() << "Could not retrieve " << YoutubeDl::ytdl_name << " version info from " << YoutubeDl::version_url;
-        emit updateYtDlVersion(QString::null);
+        emit updateYtDlVersion(QString());
         return;
     }
 
@@ -426,7 +425,7 @@ void ClipGrab::parseYtDlVersion(QNetworkReply* reply)
             return;
         }
     }
-    emit updateYtDlVersion(QString::null);
+    emit updateYtDlVersion(QString());
 }
 
 void ClipGrab::parseFFmpegReleases(QNetworkReply* reply)
@@ -448,7 +447,11 @@ void ClipGrab::parseFFmpegReleases(QNetworkReply* reply)
     QStringList lines = all_lines.split("\n");
     QRegExp rx( "\"browser_download_url\"\\s*:\\s*\"(\\S+)\"\\s*" );
 #if defined(Q_OS_LINUX)
+  #if defined(__aarch64__)
+    const QString os_id = "-linuxarm64";
+  #else
     const QString os_id = "-linux64";
+  #endif
 #elif defined(Q_OS_WIN)
     const QString os_id = "-win64";
 // #elif defined(Q_OS_MAC)
@@ -825,7 +828,7 @@ void ClipGrab::startYoutubeDlDownload()
     QString youtubeDlUrl = settings.value("youtubeDlUrl", YoutubeDl::download_url).toString();
     QNetworkRequest request;
     request.setUrl(QUrl(youtubeDlUrl));
-    request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     QNetworkAccessManager* youtubeDlNAM = new QNetworkAccessManager();
     QNetworkReply* reply = youtubeDlNAM->get(request);
 
@@ -882,7 +885,7 @@ void ClipGrab::startFFmpegDownload(QString url)
 
     QNetworkRequest request;
     request.setUrl(QUrl(url));
-    request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     QNetworkAccessManager* youtubeDlNAM = new QNetworkAccessManager();
     QNetworkReply* reply = youtubeDlNAM->get(request);
 
